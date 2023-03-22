@@ -1,0 +1,16 @@
+.vs
+.vscode
+
+build
+bin
+Debug
+OGE.dir
+
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+OGE.sln
+
+cmake_install.cmake
+CMakeCache.txt
+CMakeFiles
