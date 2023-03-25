@@ -3,25 +3,80 @@
 
 #include <ogl/ogl.hpp>
 
+struct ImGuiIO;
+
 namespace oge {
 
 	class Panel {
 	public:
-		Panel(std::string_view name) : m_name(name) {}
+		Panel(std::string_view name);
 		virtual ~Panel() = default;
 
 		inline const std::string& get_name() const { return m_name; }
+		inline const bool& get_enabled() const  { return m_enabled; }
+		inline bool& get_enabled() { return m_enabled; }
 
 		virtual void on_imgui_update() {}
 
+	protected:
+		inline const ImGuiIO* get_io() const { return m_io; }
+		inline ImGuiIO* get_io() { return m_io; }
+
 	private:
 		std::string m_name{};
+		ImGuiIO* m_io{ nullptr };
+		bool m_enabled{ false };
 	};
 
 	class Docking : public Panel {
 	public:
-		Docking();
+		Docking(class EditorWorkspace* workspace);
 		virtual ~Docking() override = default;
+
+		virtual void on_imgui_update() override;
+
+	private:
+		class EditorWorkspace* m_workspace{ nullptr };
+		int m_dock_node_flags{};
+		int m_window_flags{};
+	};
+
+	class Hierarchy : public Panel {
+	public:
+		Hierarchy();
+		virtual ~Hierarchy() override = default;
+
+		virtual void on_imgui_update() override;
+	};
+
+	class Inspector : public Panel {
+	public:
+		Inspector();
+		virtual ~Inspector() override = default;
+
+		virtual void on_imgui_update() override;
+	};
+
+	class Console : public Panel {
+	public:
+		Console();
+		virtual ~Console() override = default;
+
+		virtual void on_imgui_update() override;
+	};
+
+	class Assets : public Panel {
+	public:
+		Assets();
+		virtual ~Assets() override = default;
+
+		virtual void on_imgui_update() override;
+	};
+
+	class Viewport : public Panel {
+	public:
+		Viewport();
+		virtual ~Viewport() override = default;
 
 		virtual void on_imgui_update() override;
 	};
@@ -37,7 +92,11 @@ namespace oge {
 			return static_cast<_Panel*>(m_panels.back());
 		}
 
+		Panel* get_panel(std::string_view name);
+		const std::vector<Panel*>& get_all_panels() { return m_panels; }
 		void remove_panel(std::string_view name);
+
+		void push_panels(std::initializer_list<Panel*> panels);
 
 		virtual void on_update() override;
 

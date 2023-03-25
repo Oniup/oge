@@ -10,8 +10,11 @@ namespace oge {
 		ogl::Pipeline::get()->get_window()->set_title("Oniup's Game Editor - empty*");
 		ogl::Pipeline::get()->get_window()->set_size(ogl::WindowResolution_Maximize);
 
-		EditorWorkspace* workspace = static_cast<EditorWorkspace*>(push_layer(new EditorWorkspace()));
-		workspace->push_panel<Docking>();
+		EditorWorkspace* workspace = push_layer<EditorWorkspace>("editor workspace");
+		workspace->push_panels({
+			new Docking(workspace), new Hierarchy(), new Inspector(), 
+			new Console(), new Assets(), new Viewport()
+		});
 
 		ogl::Pipeline::get()->push_renderer(new ogl::BasicRenderer());
 
@@ -30,22 +33,22 @@ namespace oge {
 			glm::radians(45.0f), static_cast<float>(window->get_width()) / static_cast<float>(window->get_height()), 0.1f, 100.0f
 		);
 
-		ogl::Entity ground{};
-		ogl::TransformComponent* ground_transform = ground.get_component<ogl::TransformComponent>();
-		ogl::MeshRendererComponent* ground_mesh_renderer = ground.add_component<ogl::MeshRendererComponent>();
-		ground_mesh_renderer->model = ogl::AssetHandler::get()->load_model_into_memory("ogl/assets/models/plane", ogl::ModelFileType_Obj);
-		ground_transform->position = glm::vec3(0.0f, -1.0f, -2.0f);
-		ground_transform->scale = glm::vec3(5.0f, 1.0f, 5.0f);
+		// ogl::Entity ground{};
+		// ogl::TransformComponent* ground_transform = ground.get_component<ogl::TransformComponent>();
+		// ogl::MeshRendererComponent* ground_mesh_renderer = ground.add_component<ogl::MeshRendererComponent>();
+		// ground_mesh_renderer->model = ogl::AssetHandler::get()->load_model_into_memory("ogl/assets/models/plane", ogl::ModelFileType_Obj);
+		// ground_transform->position = glm::vec3(0.0f, -1.0f, -2.0f);
+		// ground_transform->scale = glm::vec3(5.0f, 1.0f, 5.0f);
 
-		ogl::Entity light{};
-		ogl::LightComponent* light_comp = light.add_component<ogl::LightComponent>();
-		ogl::MeshRendererComponent* light_mesh_renderer = light.add_component<ogl::MeshRendererComponent>();
-		ogl::TransformComponent* light_transform = light.get_component<ogl::TransformComponent>();
-		light_mesh_renderer->model = ogl::AssetHandler::get()->load_model_into_memory("ogl/assets/models/cube", ogl::ModelFileType_Obj);
-		light_mesh_renderer->model->meshes[0].material->overlay_color = glm::vec4(0.7f, 1.0f, 1.0f, 1.0f);
-		light_transform->position = glm::vec3(1.0f, 1.0f, -1.0f);
-		light_comp->color = glm::vec3(0.7f, 1.0f, 1.0f);
-		light_comp->position = light_transform->position;
+		// ogl::Entity light{};
+		// ogl::LightComponent* light_comp = light.add_component<ogl::LightComponent>();
+		// ogl::MeshRendererComponent* light_mesh_renderer = light.add_component<ogl::MeshRendererComponent>();
+		// ogl::TransformComponent* light_transform = light.get_component<ogl::TransformComponent>();
+		// light_mesh_renderer->model = ogl::AssetHandler::get()->load_model_into_memory("ogl/assets/models/cube", ogl::ModelFileType_Obj);
+		// light_mesh_renderer->model->meshes[0].material->overlay_color = glm::vec4(0.7f, 1.0f, 1.0f, 1.0f);
+		// light_transform->position = glm::vec3(1.0f, 1.0f, -1.0f);
+		// light_comp->color = glm::vec3(0.7f, 1.0f, 1.0f);
+		// light_comp->position = light_transform->position;
 	}
 
 }
