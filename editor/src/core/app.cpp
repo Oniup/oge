@@ -1,4 +1,5 @@
 #include "core/app.hpp"
+#include "core/editor.hpp"
 
 #include <ogl/renderer/renderer.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -9,6 +10,9 @@ namespace oge {
 		ogl::Pipeline::get()->get_window()->set_title("Oniup's Game Editor - empty*");
 		ogl::Pipeline::get()->get_window()->set_size(ogl::WindowResolution_Maximize);
 
+		EditorWorkspace* workspace = static_cast<EditorWorkspace*>(push_layer(new EditorWorkspace()));
+		workspace->push_panel<Docking>();
+
 		ogl::Pipeline::get()->push_renderer(new ogl::BasicRenderer());
 
 		ogl::Scene* scene = ogl::SceneManager::get()->push("empty");
@@ -18,6 +22,7 @@ namespace oge {
 
 		ogl::Entity camera{ true };
 		ogl::CameraComponent* camera_comp = camera.add_component<ogl::CameraComponent>();
+		camera.add_component<ogl::TagComponent>("oge_editor");
 		camera_comp->clear_color = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
 		camera_comp->is_main = true;
 		camera_comp->projection_type = ogl::CameraProjection_Perspective;

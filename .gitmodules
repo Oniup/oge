@@ -1,3 +1,7 @@
 [submodule "ogl"]
 	path = ogl
 	url = https://github.com/Oniup/ogl.git
+[submodule "editor/thirdparty/imgui"]
+	path = editor/thirdparty/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking

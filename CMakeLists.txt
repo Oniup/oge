@@ -2,27 +2,31 @@ cmake_minimum_required(VERSION 3.2)
 project(OGE)
 
 add_subdirectory(ogl)
+add_subdirectory(editor/thirdparty)
 
-file(GLOB_RECURSE OGE_HEADER_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "editor/src/*.hpp")
-file(GLOB_RECURSE OGE_SOURCE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "editor/src/*.cpp")
+# editor source
+
+add_subdirectory(editor/src/core)
 
 add_executable(
     OGE
 
-    ${OGE_HEADER_FILES}
-    ${OGE_SOURCE_FILES}
+    ${EDITOR_CORE_SOURCES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor/src/main.cpp
 )
 
 target_link_libraries(
     OGE
 
     PUBLIC ogl
+    PUBLIC imgui
 )
 
 target_include_directories(
     OGE
 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/editor/src
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/editor/thirdparty
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ogl/src
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ogl/thirdparty/entt/single_include
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ogl/thirdparty/glm
@@ -58,14 +62,3 @@ add_custom_command(
     ${CMAKE_CURRENT_SOURCE_DIR}/ogl/assets
     $<TARGET_FILE_DIR:OGE>/ogl/assets
 )
-
-if (MSVC)
-    add_custom_command(
-        TARGET OGE POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        $<TARGET_FILE_DIR:ogl>
-        $<TARGET_FILE_DIR:OGE>
-    )
-
-    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT OGE)
-endif ()
