@@ -8,6 +8,12 @@
 
 namespace oge {
 
+	enum ConsoleFileReadingStage {
+		ConsoleFileReadingStage_Type,
+		ConsoleFileReadingStage_TimeRecorded,
+		ConsoleFileReadingStage_Message
+	};
+
 	Panel::Panel(std::string_view name) : m_name(name) {
 		m_io = &ImGui::GetIO(); static_cast<void>(*m_io);
 	}
@@ -92,12 +98,96 @@ namespace oge {
 	}
 
 	Console::Console() : Panel("Console") {
+		std::FILE* file = std::fopen(OGL_DEBUG_FILE_NAME, "r");
+		if (file == nullptr) {
+			m_log_file_size = 0;
+			return;
+		}
+
+		char buffer[1024];
+		while (std::fgets(buffer, 1024, file)) {
+			m_log_file_size++;
+		}
+		std::fclose(file);
 	}
 
 	void Console::on_imgui_update() {
+		_load_logs_from_file();
+
 		if (ImGui::Begin(get_name().c_str(), &get_enabled())) {
+			for (ConsoleLog& log : m_logs) {
+				switch (log.type) {
+				case ogl::DebugType_Warning:
+					ImGui::TextColored(ImVec4(m_debug_colors[0].r, m_debug_colors[0].g, m_debug_colors[0].b, m_debug_colors[0].a), "[Warning (%f)]: %s", log.time_recorded, log.message.c_str());
+					break;
+				case ogl::DebugType_Error:
+					ImGui::TextColored(ImVec4(m_debug_colors[1].r, m_debug_colors[1].g, m_debug_colors[1].b, m_debug_colors[1].a), "[Error (%f)]: %s", log.time_recorded, log.message.c_str());
+					break;
+				case ogl::DebugType_Message:
+					ImGui::Text("[Message (%f)]: %s", log.time_recorded, log.message.c_str());
+					break;
+				}
+			}
+
 			ImGui::End();
 		}
+	}
+
+	void Console::_load_logs_from_file() {
+		std::FILE* file = std::fopen(OGL_DEBUG_FILE_NAME, "r");
+		if (file == nullptr) {
+			return;
+		}
+
+		char line[1024];
+		size_t line_position = 0;
+		while (std::fgets(line, 1024, file)) {
+			if (line_position >= m_log_file_size) {
+				if (std::strlen(line) > 1) {
+					size_t line_length = std::strlen(line);
+					ConsoleFileReadingStage stage = ConsoleFileReadingStage_Type;
+					ConsoleLog log{};
+
+					size_t j = 0;
+					char current[1024];
+					for (size_t i = 0; i < line_length; i++) {
+						switch (stage) {
+						case ConsoleFileReadingStage_Type:
+							if (line[i] == ',') {
+								current[j] = '\0';
+								log.type = static_cast<ogl::DebugType>(std::stoi(current));
+
+								j = 0;
+								stage = ConsoleFileReadingStage_TimeRecorded;
+								continue;
+							}
+							break;
+						case ConsoleFileReadingStage_TimeRecorded:
+							if (line[i] == ',') {
+								current[j] = '\0';
+								log.time_recorded = std::stof(current);
+
+								j = 0;
+								stage = ConsoleFileReadingStage_Message;
+								continue;
+							}
+							break;
+						}
+
+						current[j] = line[i];
+						j++;
+					}
+
+					current[j] = '\0';
+					log.message = current;
+					m_logs.push_back(log);
+				}
+			}
+			line_position++;
+		}
+		
+		m_log_file_size = line_position + 1;
+		std::fclose(file);
 	}
 
 	Assets::Assets() : Panel("Assets") {

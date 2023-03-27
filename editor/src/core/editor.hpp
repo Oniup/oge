@@ -57,12 +57,25 @@ namespace oge {
 		virtual void on_imgui_update() override;
 	};
 
+	struct ConsoleLog {
+		ogl::DebugType type{};
+		float time_recorded{};
+		std::string message{};
+	};
+
 	class Console : public Panel {
 	public:
 		Console();
 		virtual ~Console() override = default;
 
 		virtual void on_imgui_update() override;
+
+	private:
+		void _load_logs_from_file();
+
+		size_t m_log_file_size{};
+		std::vector<ConsoleLog> m_logs{};
+		glm::vec4 m_debug_colors[2]{ glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
 	};
 
 	class Assets : public Panel {

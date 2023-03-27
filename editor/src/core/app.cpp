@@ -10,6 +10,12 @@ namespace oge {
 		ogl::Pipeline::get()->get_window()->set_title("Oniup's Game Editor - empty*");
 		ogl::Pipeline::get()->get_window()->set_size(ogl::WindowResolution_Maximize);
 
+		ogl::Debug* debug = get_layer<ogl::Debug>(OGL_CORE_DEBUG_LAYER_NAME);
+		debug->set_serialize(true);
+		ogl::Debug::log("This is a Plain Message");
+		ogl::Debug::log("And this is a Warning Message", ogl::DebugType_Warning);
+		ogl::Debug::log("Finally, this is a Error Message", ogl::DebugType_Error);
+
 		EditorWorkspace* workspace = push_layer<EditorWorkspace>("editor workspace");
 		workspace->push_panels({
 			new Docking(workspace), new Hierarchy(), new Inspector(), 
