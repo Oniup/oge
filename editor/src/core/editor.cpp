@@ -76,25 +76,21 @@ namespace oge {
 	}
 
 	void Hierarchy::on_imgui_update() {
-		if (ImGui::Begin(get_name().c_str(), &get_enabled())) {
-			ImGui::Text("This is a test");
-			ImGui::Text("This is a test");
-			ImGui::Text("This is a test");
-			ImGui::Text("This is a test");
-			ImGui::Text("This is a test");
-			ImGui::Text("This is a test");
+		ImGui::Begin(get_name().c_str(), &get_enabled());
+		ImGui::Text("This is a test");
+		ImGui::Text("This is a test");
+		ImGui::Text("This is a test");
+		ImGui::Text("This is a test");
+		ImGui::Text("This is a test");
+		ImGui::Text("This is a test");
 
-			ImGui::End();
-		}
+		ImGui::End();
 	}
 
 	Inspector::Inspector() : Panel("Inspector") {
 	}
 
 	void Inspector::on_imgui_update() {
-		if (ImGui::Begin(get_name().c_str(), &get_enabled())) {
-			ImGui::End();
-		}
 	}
 
 	Console::Console() : Panel("Console") {
@@ -109,13 +105,45 @@ namespace oge {
 			m_log_file_size++;
 		}
 		std::fclose(file);
+
+		m_filters = {
+			std::make_tuple(true, "Messages"), 
+			std::make_tuple(true, "Warnings"), 
+			std::make_tuple(true, "Errors"), 
+            std::make_tuple(true, "Inits"), 
+			std::make_tuple(true, "Terminates"), 
+		};
+
+		get_enabled() = true;
 	}
 
 	void Console::on_imgui_update() {
 		_load_logs_from_file();
 
-		if (ImGui::Begin(get_name().c_str(), &get_enabled())) {
-			for (ConsoleLog& log : m_logs) {
+		ImGui::Begin(get_name().c_str(), &get_enabled(), ImGuiWindowFlags_MenuBar);
+
+		if (ImGui::BeginMenuBar()) {
+			if (ImGui::BeginMenu("Options")) {
+				if (ImGui::BeginMenu("Filter")) {
+					for (std::tuple<bool, std::string>& filter : m_filters) {
+						ImGui::MenuItem(std::get<std::string>(filter).c_str(), nullptr, &std::get<bool>(filter));
+					}
+					ImGui::EndMenu();
+				}
+				ImGui::MenuItem("Auto-Scrolling", nullptr, &m_auto_scrolling);
+				ImGui::EndMenu();
+			}
+			if (ImGui::MenuItem("Clear")) {
+				m_logs.clear();
+			}
+			if (ImGui::MenuItem("Add Test Log")) {
+				m_logs.push_back(ConsoleLog { ogl::DebugType_Message, ogl::Time::get_elapsed(), "Test Message" });
+			}
+			ImGui::EndMenuBar();
+		}
+
+		for (ConsoleLog& log : m_logs) {
+			if (std::get<bool>(m_filters[static_cast<size_t>(log.type)])) {
 				switch (log.type) {
 				case ogl::DebugType_Warning:
 					ImGui::TextColored(ImVec4(m_debug_colors[0].r, m_debug_colors[0].g, m_debug_colors[0].b, m_debug_colors[0].a), "[Warning (%f)]: %s", log.time_recorded, log.message.c_str());
@@ -128,9 +156,13 @@ namespace oge {
 					break;
 				}
 			}
-
-			ImGui::End();
 		}
+
+		if (m_auto_scrolling && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+			ImGui::SetScrollHereY(1.0f);
+		}
+
+		ImGui::End();
 	}
 
 	void Console::_load_logs_from_file() {

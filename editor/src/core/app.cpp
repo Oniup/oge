@@ -18,8 +18,7 @@ namespace oge {
 
 		EditorWorkspace* workspace = push_layer<EditorWorkspace>("editor workspace");
 		workspace->push_panels({
-			new Docking(workspace), new Hierarchy(), new Inspector(), 
-			new Console(), new Assets(), new Viewport()
+			new Docking(workspace), new Console()
 		});
 
 		ogl::Pipeline::get()->push_renderer(new ogl::BasicRenderer());

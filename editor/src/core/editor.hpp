@@ -76,6 +76,8 @@ namespace oge {
 		size_t m_log_file_size{};
 		std::vector<ConsoleLog> m_logs{};
 		glm::vec4 m_debug_colors[2]{ glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
+		std::array<std::tuple<bool, std::string>, ogl::debug_type_count> m_filters{};
+		bool m_auto_scrolling{ true };
 	};
 
 	class Assets : public Panel {
