@@ -37,39 +37,38 @@ namespace oge {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		if (ImGui::Begin(get_name().c_str(), &get_enabled(), m_window_flags)) {
-			ImGui::PopStyleVar(3);
+		ImGui::Begin(get_name().c_str(), &get_enabled(), m_window_flags);
+		ImGui::PopStyleVar(3);
 
-			ImGuiID dock_space_id = ImGui::GetID("DockSpace");
-			ImGui::DockSpace(dock_space_id, ImVec2(0.0f, 0.0f), m_dock_node_flags);
+		ImGuiID dock_space_id = ImGui::GetID("DockSpace");
+		ImGui::DockSpace(dock_space_id, ImVec2(0.0f, 0.0f), m_dock_node_flags);
 
-			if (ImGui::BeginMenuBar()) {
-				if (ImGui::BeginMenu("File")) {
+		if (ImGui::BeginMenuBar()) {
+			if (ImGui::BeginMenu("File")) {
 
-					ImGui::EndMenu();
-				}
+				ImGui::EndMenu();
+			}
 
-				if (ImGui::BeginMenu("Preferences")) {
-					if (ImGui::BeginMenu("Open Window")) {
-						const std::vector<Panel*>& panels = m_workspace->get_all_panels();
+			if (ImGui::BeginMenu("Preferences")) {
+				if (ImGui::BeginMenu("Open Window")) {
+					const std::vector<Panel*>& panels = m_workspace->get_all_panels();
 
-						for (Panel* panel : panels) {
-							if (panel->get_name() != get_name()) {
-								ImGui::MenuItem(panel->get_name().c_str(), nullptr, &panel->get_enabled());
-							}
+					for (Panel* panel : panels) {
+						if (panel->get_name() != get_name()) {
+							ImGui::MenuItem(panel->get_name().c_str(), nullptr, &panel->get_enabled());
 						}
-
-						ImGui::EndMenu();
 					}
 
 					ImGui::EndMenu();
 				}
 
-				ImGui::EndMenuBar();
+				ImGui::EndMenu();
 			}
 
-			ImGui::End();
+			ImGui::EndMenuBar();
 		}
+
+		ImGui::End();
 	}
 
 	Hierarchy::Hierarchy() : Panel("Hierarchy") {
@@ -106,13 +105,13 @@ namespace oge {
 		}
 		std::fclose(file);
 
-		m_filters = {
-			std::make_tuple(true, "Messages"), 
-			std::make_tuple(true, "Warnings"), 
-			std::make_tuple(true, "Errors"), 
-            std::make_tuple(true, "Inits"), 
-			std::make_tuple(true, "Terminates"), 
+		std::string names[] = {
+			"Messages", "Warnings", "Errors", "Inits", "Terminate"
 		};
+		for (size_t i = 0; i < ogl::debug_type_count; i++) {
+			std::get<bool>(m_filters[i]) = true;
+			std::get<std::string>(m_filters[i]) = std::move(names[i]);
+		}
 
 		get_enabled() = true;
 	}
@@ -232,14 +231,48 @@ namespace oge {
 		}
 	}
 
-	Viewport::Viewport() : Panel("Viewport") {
-
+	Viewport::Viewport(ogl::Framebuffer* framebuffer) : Panel("Viewport") {
+		if (framebuffer != nullptr) {
+			m_framebuffer = framebuffer;
+		}
+		else {
+			ogl::Debug::log("Viewport::Viewport(ogl::Framebuffer*) -> failed to create viewport as framebuffer is nullptr");
+		}
 	}
 
 	void Viewport::on_imgui_update() {
-		if (ImGui::Begin(get_name().c_str(), &get_enabled())) {
-			ImGui::End();
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+		ImGui::Begin(get_name().c_str(), &get_enabled(), ImGuiWindowFlags_NoScrollbar);
+		ImGui::PopStyleVar();
+		ImGui::BeginChild(1);
+
+		if (m_framebuffer != nullptr) {
+			ImVec2 window_size = ImGui::GetWindowSize();
+
+			if (window_size.x != m_framebuffer->size.x || window_size.y != m_framebuffer->size.y) {
+				m_framebuffer = ogl::Pipeline::get()->recreate_framebuffer(m_framebuffer, static_cast<int>(window_size.x), static_cast<int>(window_size.y));
+				if (m_framebuffer == nullptr) {
+					ogl::Debug::log("Viewport::on_imgui_update() -> failed to resize framebuffer size");
+					return;
+				}
+			}
+
+			uint64_t viewport_texture_id = static_cast<uint64_t>(m_framebuffer->texture);
+			ImGui::Image(
+				reinterpret_cast<void*>(viewport_texture_id), ImVec2(
+					static_cast<float>(m_framebuffer->size.x), static_cast<float>(m_framebuffer->size.y)
+				),
+				ImVec2(1, 1), ImVec2(0, 0)
+			);
 		}
+		else {
+			ImGui::Text("No Framebuffer Allocated");
+		}
+		ImGui::EndChild();
+
+
+		ImGui::End();
 	}
 
 	EditorWorkspace::EditorWorkspace() {
@@ -296,8 +329,6 @@ namespace oge {
 	}
 
 	void EditorWorkspace::on_update() {
-		static ImGuiIO& io = ImGui::GetIO(); (void)io;
-
 		ImGui_ImplGlfw_NewFrame();
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui::NewFrame();
@@ -311,6 +342,7 @@ namespace oge {
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+		static ImGuiIO& io = ImGui::GetIO(); (void)io;
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 			GLFWwindow* backup_context = glfwGetCurrentContext();
 			ImGui::UpdatePlatformWindows();

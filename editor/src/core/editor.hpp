@@ -76,7 +76,7 @@ namespace oge {
 		size_t m_log_file_size{};
 		std::vector<ConsoleLog> m_logs{};
 		glm::vec4 m_debug_colors[2]{ glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
-		std::array<std::tuple<bool, std::string>, ogl::debug_type_count> m_filters{};
+		std::tuple<bool, std::string> m_filters[ogl::debug_type_count];
 		bool m_auto_scrolling{ true };
 	};
 
@@ -90,10 +90,13 @@ namespace oge {
 
 	class Viewport : public Panel {
 	public:
-		Viewport();
+		Viewport(ogl::Framebuffer* framebuffer);
 		virtual ~Viewport() override = default;
 
 		virtual void on_imgui_update() override;
+	private:
+		glm::ivec2 m_last_required_framebuffer_size{};
+		ogl::Framebuffer* m_framebuffer{ nullptr };
 	};
 
 	class EditorWorkspace : public ogl::ApplicationLayer {
