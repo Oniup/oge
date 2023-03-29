@@ -15,16 +15,25 @@ namespace oge {
 		ogl::Debug* debug = get_layer<ogl::Debug>(OGL_CORE_DEBUG_LAYER_NAME);
 		debug->set_automatically_clear_on_update(false);
 		debug->set_serialize(true);
+		ogl::Debug::log("Test Message");
+		ogl::Debug::log("Test Warning Message", ogl::DebugType_Warning);
+		ogl::Debug::log("Test Error Message", ogl::DebugType_Error);
 
+		// initialize editor workspace
 		EditorWorkspace* workspace = push_layer<EditorWorkspace>("editor workspace");
 		workspace->push_panels({
-			new Docking(workspace), new Console(debug), new Viewport(editor_viewport_framebuffer)
+			new DockingEditorWorkspace(workspace), new ConsoleEditorWorkspace(debug), new ViewportEditorWorkspace(editor_viewport_framebuffer), 
+			new HierarchyEditorWorkspace(), new AssetsEditorWorkspace()
 		});
+		workspace->push_panel<InspectorEditorWorkspace>(static_cast<HierarchyEditorWorkspace*>(workspace->get_panel("Hierarchy")));
 
+		// example scene
+		// TODO(Ewan): implement serialization
 		ogl::Scene* scene = ogl::SceneManager::get()->push("empty");
 		ogl::SceneManager::get()->set_active(scene);
 
 		ogl::Entity camera{ true };
+		camera.add_component<ogl::NameComponent>("Main Camera");
 		ogl::CameraComponent* camera_comp = camera.add_component<ogl::CameraComponent>();
 		camera.add_component<ogl::TagComponent>("oge_editor");
 		camera_comp->clear_color = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
@@ -32,6 +41,7 @@ namespace oge {
 		camera_comp->projection_type = ogl::CameraProjection_Perspective;
 
 		ogl::Entity ground{};
+		ground.add_component<ogl::NameComponent>("Ground");
 		ogl::TransformComponent* ground_transform = ground.get_component<ogl::TransformComponent>();
 		ogl::MeshRendererComponent* ground_mesh_renderer = ground.add_component<ogl::MeshRendererComponent>();
 		ground_mesh_renderer->model = ogl::AssetHandler::get()->load_model_into_memory("ogl/assets/models/plane", ogl::ModelFileType_Obj);
@@ -39,6 +49,7 @@ namespace oge {
 		ground_transform->scale = glm::vec3(2.0f, 1.0f, 2.0f);
 
 		ogl::Entity sphere{};
+		sphere.add_component<ogl::NameComponent>("Sphere");
 		sphere.get_component<ogl::TransformComponent>()->position = glm::vec3(0.0f, 0.0f, -7.0f);
 		sphere.get_component<ogl::TransformComponent>()->scale = glm::vec3(1.0f, 1.0f, 1.0f);
 		ogl::MeshRendererComponent* sphere_mesh_renderer = sphere.add_component<ogl::MeshRendererComponent>();
@@ -46,6 +57,7 @@ namespace oge {
 		sphere_mesh_renderer->model->meshes[0].material->overlay_color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
 
 		ogl::Entity light{};
+		light.add_component<ogl::NameComponent>("Point Light");
 		ogl::LightComponent* light_comp = light.add_component<ogl::LightComponent>();
 		ogl::MeshRendererComponent* light_mesh_renderer = light.add_component<ogl::MeshRendererComponent>();
 		ogl::TransformComponent* light_transform = light.get_component<ogl::TransformComponent>();

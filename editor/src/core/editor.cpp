@@ -14,11 +14,11 @@ namespace oge {
 		ConsoleFileReadingStage_Message
 	};
 
-	Panel::Panel(std::string_view name) : m_name(name) {
+	PanelEditorWorkspaceBase::PanelEditorWorkspaceBase(std::string_view name) : m_name(name) {
 		m_io = &ImGui::GetIO(); static_cast<void>(*m_io);
 	}
 
-	Docking::Docking(EditorWorkspace* workspace) : Panel("Docking") {
+	DockingEditorWorkspace::DockingEditorWorkspace(EditorWorkspace* workspace) : PanelEditorWorkspaceBase("Docking") {
 		m_dock_node_flags = ImGuiDockNodeFlags_None;
 
 		m_window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | 
@@ -28,7 +28,7 @@ namespace oge {
 		get_enabled() = true;
 	}
 
-	void Docking::on_imgui_update() {
+	void DockingEditorWorkspace::on_imgui_update() {
 		const ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->WorkPos);
         ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -51,9 +51,9 @@ namespace oge {
 
 			if (ImGui::BeginMenu("Preferences")) {
 				if (ImGui::BeginMenu("Open Window")) {
-					const std::vector<Panel*>& panels = m_workspace->get_all_panels();
+					const std::vector<PanelEditorWorkspaceBase*>& panels = m_workspace->get_all_panels();
 
-					for (Panel* panel : panels) {
+					for (PanelEditorWorkspaceBase* panel : panels) {
 						if (panel->get_name() != get_name()) {
 							ImGui::MenuItem(panel->get_name().c_str(), nullptr, &panel->get_enabled());
 						}
@@ -71,28 +71,65 @@ namespace oge {
 		ImGui::End();
 	}
 
-	Hierarchy::Hierarchy() : Panel("Hierarchy") {
+	HierarchyEditorWorkspace::HierarchyEditorWorkspace() : PanelEditorWorkspaceBase("Hierarchy") {
 	}
 
-	void Hierarchy::on_imgui_update() {
+	void HierarchyEditorWorkspace::on_imgui_update() {
 		ImGui::Begin(get_name().c_str(), &get_enabled());
-		ImGui::Text("This is a test");
-		ImGui::Text("This is a test");
-		ImGui::Text("This is a test");
-		ImGui::Text("This is a test");
-		ImGui::Text("This is a test");
-		ImGui::Text("This is a test");
+
+		entt::registry& registry = ogl::SceneManager::get()->get_active_scene()->get_registry();
+		const entt::entity* entities = registry.data();
+
+		entt::entity entity_clicked = get_non_selected_entity_value();
+		for (size_t i = 0; i < registry.size(); i++) {
+			ogl::Entity entity = ogl::Entity(entities[i]);
+			ogl::NameComponent* name = entity.get_component<ogl::NameComponent>();
+
+			int flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+			if (m_selected_entity == entities[i]) {
+				flags |= ImGuiTreeNodeFlags_Selected;
+			}
+			if (name != nullptr) {
+				ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<intptr_t>(entities[i])), flags, "%s (%u)", name->name.c_str(), entities[i]);
+			}
+			else {
+				ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<intptr_t>(entities[i])), flags, "No Name: (%u)", entities[i]);
+			}
+
+			if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+				entity_clicked = entities[i];
+			}
+		}
+
+		if (entity_clicked != get_non_selected_entity_value()) {
+			m_selected_entity = entity_clicked;
+		}
 
 		ImGui::End();
 	}
 
-	Inspector::Inspector() : Panel("Inspector") {
+	InspectorEditorWorkspace::InspectorEditorWorkspace(HierarchyEditorWorkspace* hierarchy) : PanelEditorWorkspaceBase("Inspector"), m_hierarchy(hierarchy) {
 	}
 
-	void Inspector::on_imgui_update() {
+	void InspectorEditorWorkspace::on_imgui_update() {
+		ImGui::Begin(get_name().c_str(), &get_enabled());
+
+		if (m_hierarchy->get_selected_entity() != m_hierarchy->get_non_selected_entity_value()) {
+			ogl::Entity entity = ogl::Entity(m_hierarchy->get_selected_entity());
+			ogl::NameComponent* name = entity.get_component<ogl::NameComponent>();
+
+			if (name != nullptr) {
+				ImGui::Text("selected entity '%s' with the id of %u", name->name.c_str(), m_hierarchy->get_selected_entity());
+			}
+			else {
+				ImGui::Text("selected entity 'No Name' with the id of %u", m_hierarchy->get_selected_entity());
+			}
+		}
+
+		ImGui::End();
 	}
 
-	Console::Console(ogl::Debug* debug) : Panel("Console") {
+	ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug) : PanelEditorWorkspaceBase("Console") {
 		std::string names[] = {
 			"Messages", "Warnings", "Errors", "Fatal Errors", "Inits", "Terminate"
 		};
@@ -101,12 +138,10 @@ namespace oge {
 			std::get<std::string>(m_filters[i]) = std::move(names[i]);
 		}
 
-		get_enabled() = true;
-
 		m_debug = debug;
 	}
 
-	void Console::on_imgui_update() {
+	void ConsoleEditorWorkspace::on_imgui_update() {
 		ImGui::Begin(get_name().c_str(), &get_enabled(), ImGuiWindowFlags_MenuBar);
 
 		if (ImGui::BeginMenuBar()) {
@@ -118,6 +153,11 @@ namespace oge {
 					ImGui::EndMenu();
 				}
 				ImGui::MenuItem("Auto-Scrolling", nullptr, &m_auto_scrolling);
+				if (ImGui::MenuItem("Log Tests")) {
+					ogl::Debug::log("Test Message");
+					ogl::Debug::log("Test Warning Message", ogl::DebugType_Warning);
+					ogl::Debug::log("Test Error Message", ogl::DebugType_Error);
+				}
 				ImGui::EndMenu();
 			}
 			if (ImGui::MenuItem("Clear")) {
@@ -149,17 +189,16 @@ namespace oge {
 		ImGui::End();
 	}
 
-	Assets::Assets() : Panel("Assets") {
+	AssetsEditorWorkspace::AssetsEditorWorkspace() : PanelEditorWorkspaceBase("Assets") {
 
 	}
 
-	void Assets::on_imgui_update() {
-		if (ImGui::Begin(get_name().c_str(), &get_enabled())) {
-			ImGui::End();
-		}
+	void AssetsEditorWorkspace::on_imgui_update() {
+		ImGui::Begin(get_name().c_str(), &get_enabled());
+		ImGui::End();
 	}
 
-	Viewport::Viewport(ogl::Framebuffer* framebuffer) : Panel("Viewport") {
+	ViewportEditorWorkspace::ViewportEditorWorkspace(ogl::Framebuffer* framebuffer) : PanelEditorWorkspaceBase("Viewport") {
 		if (framebuffer != nullptr) {
 			m_framebuffer = framebuffer;
 		}
@@ -168,7 +207,7 @@ namespace oge {
 		}
 	}
 
-	void Viewport::on_imgui_update() {
+	void ViewportEditorWorkspace::on_imgui_update() {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
 		ImGui::Begin(get_name().c_str(), &get_enabled(), ImGuiWindowFlags_NoScrollbar);
@@ -221,7 +260,7 @@ namespace oge {
 	}
 
 	EditorWorkspace::~EditorWorkspace() {
-		for (Panel* panel : m_panels) {
+		for (PanelEditorWorkspaceBase* panel : m_panels) {
 			delete panel;
 		}
 
@@ -230,8 +269,8 @@ namespace oge {
 		ImGui::DestroyContext();
 	}
 
-	Panel* EditorWorkspace::get_panel(std::string_view name) {
-		for (Panel* panel : m_panels) {
+	PanelEditorWorkspaceBase* EditorWorkspace::get_panel(std::string_view name) {
+		for (PanelEditorWorkspaceBase* panel : m_panels) {
 			if (panel->get_name() == name) {
 				return panel;
 			}
@@ -250,8 +289,8 @@ namespace oge {
 		}
 	}
 
-	void EditorWorkspace::push_panels(std::initializer_list<Panel*> panels) {
-		for (Panel* panel : panels) {
+	void EditorWorkspace::push_panels(std::initializer_list<PanelEditorWorkspaceBase*> panels) {
+		for (PanelEditorWorkspaceBase* panel : panels) {
 			m_panels.push_back(panel);
 		}
 	}
@@ -261,7 +300,7 @@ namespace oge {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui::NewFrame();
 
-		for (Panel* panel : m_panels) {
+		for (PanelEditorWorkspaceBase* panel : m_panels) {
 			if (panel->get_enabled()) {
 				panel->on_imgui_update();
 			}
