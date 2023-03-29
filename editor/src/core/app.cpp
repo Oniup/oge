@@ -12,13 +12,13 @@ namespace oge {
 		static_cast<ogl::BasicRenderer*>(ogl::Pipeline::get()->push_renderer(new ogl::BasicRenderer()))->use_default_framebuffer(false);
 		ogl::Framebuffer* editor_viewport_framebuffer = ogl::Pipeline::get()->create_framebuffer("editor viewport", 1280, 720);
 
-		// FIXME(Ewan): when adding new logs rather than at the beginning, it doesn't render it to the console
-		// ogl::Debug* debug = get_layer<ogl::Debug>(OGL_CORE_DEBUG_LAYER_NAME);
-		// debug->set_serialize(true);
+		ogl::Debug* debug = get_layer<ogl::Debug>(OGL_CORE_DEBUG_LAYER_NAME);
+		debug->set_automatically_clear_on_update(false);
+		debug->set_serialize(true);
 
 		EditorWorkspace* workspace = push_layer<EditorWorkspace>("editor workspace");
 		workspace->push_panels({
-			new Docking(workspace), new Console(), new Viewport(editor_viewport_framebuffer)
+			new Docking(workspace), new Console(debug), new Viewport(editor_viewport_framebuffer)
 		});
 
 		ogl::Scene* scene = ogl::SceneManager::get()->push("empty");

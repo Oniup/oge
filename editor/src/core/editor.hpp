@@ -65,19 +65,16 @@ namespace oge {
 
 	class Console : public Panel {
 	public:
-		Console();
+		Console(ogl::Debug* debug);
 		virtual ~Console() override = default;
 
 		virtual void on_imgui_update() override;
 
 	private:
-		void _load_logs_from_file();
-
-		size_t m_log_file_size{};
-		std::vector<ConsoleLog> m_logs{};
 		glm::vec4 m_debug_colors[2]{ glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
 		std::tuple<bool, std::string> m_filters[ogl::debug_type_count];
 		bool m_auto_scrolling{ true };
+		ogl::Debug* m_debug{ nullptr };
 	};
 
 	class Assets : public Panel {

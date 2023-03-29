@@ -92,21 +92,9 @@ namespace oge {
 	void Inspector::on_imgui_update() {
 	}
 
-	Console::Console() : Panel("Console") {
-		std::FILE* file = std::fopen(OGL_DEBUG_FILE_NAME, "r");
-		if (file == nullptr) {
-			m_log_file_size = 0;
-			return;
-		}
-
-		char buffer[1024];
-		while (std::fgets(buffer, 1024, file)) {
-			m_log_file_size++;
-		}
-		std::fclose(file);
-
+	Console::Console(ogl::Debug* debug) : Panel("Console") {
 		std::string names[] = {
-			"Messages", "Warnings", "Errors", "Inits", "Terminate"
+			"Messages", "Warnings", "Errors", "Fatal Errors", "Inits", "Terminate"
 		};
 		for (size_t i = 0; i < ogl::debug_type_count; i++) {
 			std::get<bool>(m_filters[i]) = true;
@@ -114,11 +102,11 @@ namespace oge {
 		}
 
 		get_enabled() = true;
+
+		m_debug = debug;
 	}
 
 	void Console::on_imgui_update() {
-		_load_logs_from_file();
-
 		ImGui::Begin(get_name().c_str(), &get_enabled(), ImGuiWindowFlags_MenuBar);
 
 		if (ImGui::BeginMenuBar()) {
@@ -133,25 +121,22 @@ namespace oge {
 				ImGui::EndMenu();
 			}
 			if (ImGui::MenuItem("Clear")) {
-				m_logs.clear();
-			}
-			if (ImGui::MenuItem("Add Test Log")) {
-				m_logs.push_back(ConsoleLog { ogl::DebugType_Message, ogl::Time::get_elapsed(), "Test Message" });
+				m_debug->clear_logs();
 			}
 			ImGui::EndMenuBar();
 		}
 
-		for (ConsoleLog& log : m_logs) {
-			if (std::get<bool>(m_filters[static_cast<size_t>(log.type)])) {
-				switch (log.type) {
+		for (const std::tuple<ogl::DebugType, std::string, float>& log : m_debug->get_logs()) {
+			if (std::get<bool>(m_filters[static_cast<size_t>(std::get<ogl::DebugType>(log))])) {
+				switch (std::get<ogl::DebugType>(log)) {
 				case ogl::DebugType_Warning:
-					ImGui::TextColored(ImVec4(m_debug_colors[0].r, m_debug_colors[0].g, m_debug_colors[0].b, m_debug_colors[0].a), "[Warning (%f)]: %s", log.time_recorded, log.message.c_str());
+					ImGui::TextColored(ImVec4(m_debug_colors[0].r, m_debug_colors[0].g, m_debug_colors[0].b, m_debug_colors[0].a), "[Warning (%f)]: %s", std::get<float>(log), std::get<std::string>(log).c_str());
 					break;
 				case ogl::DebugType_Error:
-					ImGui::TextColored(ImVec4(m_debug_colors[1].r, m_debug_colors[1].g, m_debug_colors[1].b, m_debug_colors[1].a), "[Error (%f)]: %s", log.time_recorded, log.message.c_str());
+					ImGui::TextColored(ImVec4(m_debug_colors[1].r, m_debug_colors[1].g, m_debug_colors[1].b, m_debug_colors[1].a), "[Error (%f)]: %s", std::get<float>(log), std::get<std::string>(log).c_str());
 					break;
 				case ogl::DebugType_Message:
-					ImGui::Text("[Message (%f)]: %s", log.time_recorded, log.message.c_str());
+					ImGui::Text("[Message (%f)]: %s", std::get<float>(log), std::get<std::string>(log).c_str());
 					break;
 				}
 			}
@@ -162,63 +147,6 @@ namespace oge {
 		}
 
 		ImGui::End();
-	}
-
-	void Console::_load_logs_from_file() {
-		std::FILE* file = std::fopen(OGL_DEBUG_FILE_NAME, "r");
-		if (file == nullptr) {
-			return;
-		}
-
-		char line[1024];
-		size_t line_position = 0;
-		while (std::fgets(line, 1024, file)) {
-			if (line_position >= m_log_file_size) {
-				if (std::strlen(line) > 1) {
-					size_t line_length = std::strlen(line);
-					ConsoleFileReadingStage stage = ConsoleFileReadingStage_Type;
-					ConsoleLog log{};
-
-					size_t j = 0;
-					char current[1024];
-					for (size_t i = 0; i < line_length; i++) {
-						switch (stage) {
-						case ConsoleFileReadingStage_Type:
-							if (line[i] == ',') {
-								current[j] = '\0';
-								log.type = static_cast<ogl::DebugType>(std::stoi(current));
-
-								j = 0;
-								stage = ConsoleFileReadingStage_TimeRecorded;
-								continue;
-							}
-							break;
-						case ConsoleFileReadingStage_TimeRecorded:
-							if (line[i] == ',') {
-								current[j] = '\0';
-								log.time_recorded = std::stof(current);
-
-								j = 0;
-								stage = ConsoleFileReadingStage_Message;
-								continue;
-							}
-							break;
-						}
-
-						current[j] = line[i];
-						j++;
-					}
-
-					current[j] = '\0';
-					log.message = current;
-					m_logs.push_back(log);
-				}
-			}
-			line_position++;
-		}
-		
-		m_log_file_size = line_position + 1;
-		std::fclose(file);
 	}
 
 	Assets::Assets() : Panel("Assets") {
