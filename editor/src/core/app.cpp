@@ -4,9 +4,31 @@
 #include <ogl/renderer/renderer.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <ogl/core/serialization.hpp>
+
+class Person {
+	OGL_SERIALIZABLE_OBJECT()
+public:
+	Person(std::string_view name, int age) : m_name(name), m_age(age) {}
+	~Person() = default;
+
+private:
+	std::string m_name{};
+	int m_age{};
+};
+
+OGL_SERIALIZABLE_OBJECT_BEGIN(Person)
+	// ogl::ObjectTypeDescriptorMember("m_name", offsetof(Person, m_name), ogl::TypeDescriptor::get<decltype(Person::m_name)>()),
+OGL_SERIALIZABLE_OBJECT_MEMBER(m_name)
+OGL_SERIALIZABLE_OBJECT_MEMBER(m_age)
+OGL_SERIALIZABLE_OBJECT_END()
+
 namespace oge {
 
 	App::App() {
+		Person person("Jeff", 32);
+		ogl::log_value(person);
+
 		ogl::Pipeline::get()->get_window()->set_title("Oniup's Game Editor - empty*");
 		ogl::Pipeline::get()->get_window()->set_size(ogl::WindowResolution_Maximize);
 		static_cast<ogl::BasicRenderer*>(ogl::Pipeline::get()->push_renderer(new ogl::BasicRenderer()))->use_default_framebuffer(false);
