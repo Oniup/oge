@@ -50,14 +50,14 @@ target_compile_definitions(
 )
 
 add_custom_command(
-    TARGET OGE 
+    TARGET OGE POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/editor/assets
     $<TARGET_FILE_DIR:OGE>/editor/assets
 )
 
 add_custom_command(
-    TARGET OGE 
+    TARGET OGE POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/ogl/assets
     $<TARGET_FILE_DIR:OGE>/ogl/assets
