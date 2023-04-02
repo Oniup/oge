@@ -6,13 +6,14 @@ add_subdirectory(editor/thirdparty)
 
 # editor source
 
+add_subdirectory(editor/src)
 add_subdirectory(editor/src/core)
 
 add_executable(
     OGE
 
+    ${EDITOR_ROOT_SOURCES}
     ${EDITOR_CORE_SOURCES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor/src/main.cpp
 )
 
 target_link_libraries(
