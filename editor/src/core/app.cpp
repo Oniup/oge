@@ -24,11 +24,26 @@ namespace oge {
 		});
 		workspace->push_panel<InspectorEditorWorkspace>(static_cast<HierarchyEditorWorkspace*>(workspace->get_panel("Hierarchy")));
 
+		{
+			ogl::TypeDescriptor* descriptor = ogl::TypeDescriptorResolver<ogl::Unique<float>>::get();
+			ogl::Unique<float> test_unique = new float;
+			*test_unique = 69.0f;
+			std::string log = "testing unique ptr\n";
+			descriptor->log(log, (std::byte*)&test_unique, 0);
+			ogl::Debug::log(log);
+
+			descriptor = ogl::TypeDescriptorResolver<ogl::Shared<int>>::get();
+			ogl::Shared<int> test_shared = new int;
+			*test_shared = 420;
+			log = "testing shared ptr\n";
+			descriptor->log(log, (std::byte*)&test_shared, 0);
+			ogl::Debug::log(log);
+		}
+
 		// example scene
 		// TODO(Ewan): implement serialization
 		ogl::Scene* scene = ogl::SceneManager::get()->push("empty");
 		ogl::SceneManager::get()->set_active(scene);
-
 
 		ogl::Entity camera{ true };
 		camera.add_component<ogl::NameComponent>("Main Camera");
