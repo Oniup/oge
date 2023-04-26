@@ -7,120 +7,125 @@ struct ImGuiIO;
 
 namespace oge {
 
-	class PanelEditorWorkspaceBase {
-	public:
-		PanelEditorWorkspaceBase(std::string_view name);
-		virtual ~PanelEditorWorkspaceBase() = default;
+class PanelEditorWorkspaceBase {
+  public:
+    PanelEditorWorkspaceBase(std::string_view name);
+    virtual ~PanelEditorWorkspaceBase() = default;
 
-		inline const std::string& get_name() const { return m_name; }
-		inline const bool& get_enabled() const  { return m_enabled; }
-		inline bool& get_enabled() { return m_enabled; }
+    inline const std::string& get_name() const { return m_name; }
+    inline const bool& get_enabled() const { return m_enabled; }
+    inline bool& get_enabled() { return m_enabled; }
 
-		virtual void on_imgui_update() {}
+    virtual void on_imgui_update() {}
 
-	protected:
-		inline const ImGuiIO* get_io() const { return m_io; }
-		inline ImGuiIO* get_io() { return m_io; }
+  protected:
+    inline const ImGuiIO* get_io() const { return m_io; }
+    inline ImGuiIO* get_io() { return m_io; }
 
-	private:
-		std::string m_name{};
-		ImGuiIO* m_io{ nullptr };
-		bool m_enabled{ true };
-	};
+  private:
+    std::string m_name{};
+    ImGuiIO* m_io{nullptr};
+    bool m_enabled{true};
+};
 
-	class DockingEditorWorkspace : public PanelEditorWorkspaceBase {
-	public:
-		DockingEditorWorkspace(class EditorWorkspace* workspace);
-		virtual ~DockingEditorWorkspace() override = default;
+class DockingEditorWorkspace : public PanelEditorWorkspaceBase {
+  public:
+    DockingEditorWorkspace(class EditorWorkspace* workspace);
+    virtual ~DockingEditorWorkspace() override = default;
 
-		virtual void on_imgui_update() override;
+    virtual void on_imgui_update() override;
 
-	private:
-		class EditorWorkspace* m_workspace{ nullptr };
-		int m_dock_node_flags{};
-		int m_window_flags{};
-	};
+  private:
+    class EditorWorkspace* m_workspace{nullptr};
+    int m_dock_node_flags{};
+    int m_window_flags{};
+};
 
-	class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase {
-	public:
-		HierarchyEditorWorkspace();
-		virtual ~HierarchyEditorWorkspace() override = default;
+class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase {
+  public:
+    HierarchyEditorWorkspace();
+    virtual ~HierarchyEditorWorkspace() override = default;
 
-		inline constexpr entt::entity get_non_selected_entity_value() const { return static_cast<entt::entity>(std::numeric_limits<uint32_t>().max()); }
-		inline entt::entity get_selected_entity() const { return m_selected_entity; }
+    inline constexpr entt::entity get_non_selected_entity_value() const {
+        return static_cast<entt::entity>(std::numeric_limits<uint32_t>().max());
+    }
+    inline entt::entity get_selected_entity() const { return m_selected_entity; }
 
-		virtual void on_imgui_update() override;
-	private:
-		entt::entity m_selected_entity{ static_cast<entt::entity>(std::numeric_limits<uint32_t>().max()) };
-	};
+    virtual void on_imgui_update() override;
 
-	class InspectorEditorWorkspace : public PanelEditorWorkspaceBase {
-	public:
-		InspectorEditorWorkspace(HierarchyEditorWorkspace* hierarchy);
-		virtual ~InspectorEditorWorkspace() override = default;
+  private:
+    entt::entity m_selected_entity{
+        static_cast<entt::entity>(std::numeric_limits<uint32_t>().max())};
+};
 
-		virtual void on_imgui_update() override;
+class InspectorEditorWorkspace : public PanelEditorWorkspaceBase {
+  public:
+    InspectorEditorWorkspace(HierarchyEditorWorkspace* hierarchy);
+    virtual ~InspectorEditorWorkspace() override = default;
 
-	private:
-		HierarchyEditorWorkspace* m_hierarchy{ nullptr };
-	};
+    virtual void on_imgui_update() override;
 
-	class ConsoleEditorWorkspace : public PanelEditorWorkspaceBase {
-	public:
-		ConsoleEditorWorkspace(ogl::Debug* debug);
-		virtual ~ConsoleEditorWorkspace() override = default;
+  private:
+    HierarchyEditorWorkspace* m_hierarchy{nullptr};
+};
 
-		virtual void on_imgui_update() override;
+class ConsoleEditorWorkspace : public PanelEditorWorkspaceBase {
+  public:
+    ConsoleEditorWorkspace(ogl::Debug* debug);
+    virtual ~ConsoleEditorWorkspace() override = default;
 
-	private:
-		glm::vec4 m_debug_colors[2]{ glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
-		std::tuple<bool, std::string> m_filters[ogl::debug_type_count];
-		bool m_auto_scrolling{ true };
-		ogl::Debug* m_debug{ nullptr };
-	};
+    virtual void on_imgui_update() override;
 
-	class AssetsEditorWorkspace : public PanelEditorWorkspaceBase {
-	public:
-		AssetsEditorWorkspace();
-		virtual ~AssetsEditorWorkspace() override = default;
+  private:
+    glm::vec4 m_debug_colors[2]{
+        glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)};
+    std::tuple<bool, std::string> m_filters[ogl::debug_type_count];
+    bool m_auto_scrolling{true};
+    ogl::Debug* m_debug{nullptr};
+};
 
-		virtual void on_imgui_update() override;
-	};
+class AssetsEditorWorkspace : public PanelEditorWorkspaceBase {
+  public:
+    AssetsEditorWorkspace();
+    virtual ~AssetsEditorWorkspace() override = default;
 
-	class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
-	public:
-		ViewportEditorWorkspace(ogl::Framebuffer* framebuffer);
-		virtual ~ViewportEditorWorkspace() override = default;
+    virtual void on_imgui_update() override;
+};
 
-		virtual void on_imgui_update() override;
-	private:
-		glm::ivec2 m_last_required_framebuffer_size{};
-		ogl::Framebuffer* m_framebuffer{ nullptr };
-	};
+class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
+  public:
+    ViewportEditorWorkspace(ogl::Framebuffer* framebuffer);
+    virtual ~ViewportEditorWorkspace() override = default;
 
-	class EditorWorkspace : public ogl::ApplicationLayer {
-	public:
-		EditorWorkspace();
-		virtual ~EditorWorkspace();
+    virtual void on_imgui_update() override;
 
-		template <typename _Panel, typename ... _Args>
-		_Panel* push_panel(_Args&& ... args) {
-			m_panels.push_back(new _Panel{ std::forward<_Args>(args)... });
-			return static_cast<_Panel*>(m_panels.back());
-		}
+  private:
+    glm::ivec2 m_last_required_framebuffer_size{};
+    ogl::Framebuffer* m_framebuffer{nullptr};
+};
 
-		PanelEditorWorkspaceBase* get_panel(std::string_view name);
-		const std::vector<PanelEditorWorkspaceBase*>& get_all_panels() { return m_panels; }
-		void remove_panel(std::string_view name);
+class EditorWorkspace : public ogl::ApplicationLayer {
+  public:
+    EditorWorkspace();
+    virtual ~EditorWorkspace();
 
-		void push_panels(std::initializer_list<PanelEditorWorkspaceBase*> panels);
+    template<typename _Panel, typename... _Args> _Panel* push_panel(_Args&&... args) {
+        m_panels.push_back(new _Panel{std::forward<_Args>(args)...});
+        return static_cast<_Panel*>(m_panels.back());
+    }
 
-		virtual void on_update() override;
+    PanelEditorWorkspaceBase* get_panel(std::string_view name);
+    const std::vector<PanelEditorWorkspaceBase*>& get_all_panels() { return m_panels; }
+    void remove_panel(std::string_view name);
 
-	private:
-		std::vector<PanelEditorWorkspaceBase*> m_panels{};
-	};
+    void push_panels(std::initializer_list<PanelEditorWorkspaceBase*> panels);
 
-}
+    virtual void on_update() override;
+
+  private:
+    std::vector<PanelEditorWorkspaceBase*> m_panels{};
+};
+
+} // namespace oge
 
 #endif

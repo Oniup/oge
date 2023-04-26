@@ -5,12 +5,12 @@
 
 namespace oge {
 
-	class App : public ogl::Application {
-	public:
-		App();
-		virtual ~App() override = default;
-	};
+class App : public ogl::Application {
+  public:
+    App();
+    virtual ~App() override = default;
+};
 
-}
+} // namespace oge
 
 #endif
