@@ -1,8 +1,9 @@
 ---
 BasedOnStyle: LLVM
+Language: Cpp
 AlignAfterOpenBracket: BlockIndent
-AlignArrayOfStructures: Right
 AlignEscapedNewlines: Left
+AlignTrailingComments: true
 ColumnLimit: 100
 CommentPragmas: ""
 IndentPPDirectives: AfterHash

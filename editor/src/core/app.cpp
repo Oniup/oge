@@ -3,6 +3,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <ogl/renderer/renderer.hpp>
+#include <ogl/utils/yaml_serialization.hpp>
 
 namespace oge {
 
@@ -20,17 +21,19 @@ App::App() {
 
     // initialize editor workspace
     EditorWorkspace* workspace = push_layer<EditorWorkspace>("editor workspace");
-    workspace->push_panels(
-        {new DockingEditorWorkspace(workspace), new ConsoleEditorWorkspace(debug),
-         new ViewportEditorWorkspace(editor_viewport_framebuffer), new HierarchyEditorWorkspace(),
-         new AssetsEditorWorkspace()}
-    );
+    workspace->push_panels({
+        new DockingEditorWorkspace(workspace),
+        new ConsoleEditorWorkspace(debug),
+        new ViewportEditorWorkspace(editor_viewport_framebuffer),
+        new HierarchyEditorWorkspace(),
+        new AssetsEditorWorkspace(),
+    });
     workspace->push_panel<InspectorEditorWorkspace>(
         static_cast<HierarchyEditorWorkspace*>(workspace->get_panel("Hierarchy"))
     );
 
     // example scene
-    // TODO(Ewan): implement serialization
+    // TODO: implement serialization
     ogl::Scene* scene = ogl::SceneManager::get()->push("empty");
     ogl::SceneManager::get()->set_active(scene);
 
@@ -80,10 +83,32 @@ App::App() {
     light_comp->color = glm::vec3(0.7f, 1.0f, 1.0f);
     light_comp->position = light_transform->position;
 
-    ogl::TypeDescriptor_Object::log_value<ogl::TransformComponent>(
-        *sphere.get_component<ogl::TransformComponent>()
-    );
-    ogl::TypeDescriptor_Object::log_value<ogl::CameraComponent>(*camera_comp);
+    ogl::YamlSerialization conf = ogl::YamlSerialization("world_data.yaml");
+    if (conf.is_null()) {
+        std::cout << "file is empty\n";
+    } else {
+        std::cout << "file exists\n";
+    }
+
+    for (size_t i = 0; i < 3; i++) {
+        ogl::YamlSerializationOption* comp =
+            conf.push_option(ogl::YamlSerializationOption("Ent:1"));
+        comp->scope.push_back(ogl::YamlSerializationOption("ogl::TransformComponent"));
+        comp->scope[0].scope = {
+            {"position", "glm::vec3(1, 2, 3)"},
+            {"scale", "glm::vec3(1, 1, 1)"},
+            {"rotation", "glm::vec4(0, 0, 1, 0)"},
+        };
+
+        comp->scope.push_back(ogl::YamlSerializationOption("ogl::PlayerController"));
+        comp->scope[1].scope = {
+            {"move_speed", "5.0"},
+            {"damage", "5.0"},
+        };
+    }
+
+    // FIX: debug what makes the program crash
+    conf.write_changes();
 }
 
 } // namespace oge

@@ -63,16 +63,15 @@ void DockingEditorWorkspace::on_imgui_update() {
                         ImGui::MenuItem(panel->get_name().c_str(), nullptr, &panel->get_enabled());
                     }
                 }
-
                 ImGui::EndMenu();
             }
-
+            if (ImGui::BeginMenu("Preferences")) {
+                ImGui::EndMenu();
+            }
             ImGui::EndMenu();
         }
-
         ImGui::EndMenuBar();
     }
-
     ImGui::End();
 }
 
