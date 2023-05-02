@@ -1,0 +1,15 @@
+Entity_1:
+  ogl::TransformComponent:
+    position: glm::vec3(1, 1, 1)
+    scale: glm::vec3(1, 1, 1)
+    rotation: glm::vec4(0, 0, 1, 0)
+  ogl::MeshComponent:
+    file_path: "Some path to .obj file"
+
+Entity_2:
+  ogl::TransformComponent:
+    position: glm::vec3(2, 2, 2)
+    scale: glm::vec3(5, 5, 5)
+    rotation: glm::vec4(0, 0, 1, 90)
+  ogl::MeshComponent:
+    file_path: "Some other path to .obj file"

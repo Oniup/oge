@@ -83,13 +83,10 @@ App::App() {
     light_comp->color = glm::vec3(0.7f, 1.0f, 1.0f);
     light_comp->position = light_transform->position;
 
-    ogl::YamlSerialization conf = ogl::YamlSerialization("world_data.yaml");
-    if (conf.is_null()) {
-        std::cout << "file is empty\n";
-    } else {
-        std::cout << "file exists\n";
-    }
+    ogl::YamlSerialization conf = ogl::YamlSerialization("test_data.yaml");
+    conf.debug_log();
 
+    conf.clear(); // override file otherwise it'll append the following new settings
     for (size_t i = 0; i < 3; i++) {
         ogl::YamlSerializationOption* comp =
             conf.push_option(ogl::YamlSerializationOption("Ent:1"));
@@ -107,7 +104,6 @@ App::App() {
         };
     }
 
-    // FIX: debug what makes the program crash
     conf.write_changes();
 }
 
