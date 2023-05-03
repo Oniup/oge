@@ -1,10 +1,11 @@
 #include "core/editor.hpp"
 
+#include <ogl/utils/filesystem.hpp>
+
+#include <GLFW/glfw3.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/imgui.h>
-
-#include <GLFW/glfw3.h>
 
 namespace oge {
 
@@ -17,7 +18,119 @@ enum ConsoleFileReadingStage {
 PanelEditorWorkspaceBase::PanelEditorWorkspaceBase(std::string_view name) : m_name(name) {
     m_io = &ImGui::GetIO();
     static_cast<void>(*m_io);
+
+    // FIX: Make sure this works on windows
+#ifndef WIN32
+    std::string settings_path = ogl::FileSystem::get_env_var("HOME") + "/.config/oge";
+#else
+    std::string settings_path = ogl::FileSystem::get_env_var("APPDATA") + "/oge";
+#endif
+
+    ogl::FileSystemAt settings = ogl::FileSystemAt(settings_path);
+    if (!settings.dir_exists()) {
+        settings = ogl::FileSystemAt(settings_path, true);
+        settings.copy_file_into_this("editor/assets/default_settings/preferences.yaml");
+        settings.create_dir("layouts");
+
+        settings.set_directory(settings.get_current_path() + "/layouts");
+        settings.copy_file_into_this(
+            "editor/assets/default_settings/default_layout.ini", "default.ini"
+        );
+        settings.set_directory(settings_path);
+    }
+
+    std::remove("imgui.ini");
+    if (!ogl::FileSystem::copy_file(settings_path + "/layouts/default.ini", "imgui.ini")) {
+        ogl::Debug::log("Failed to load editor layout", ogl::DebugType_Error);
+    }
 }
+
+EditorWorkspace::EditorWorkspace() {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable |
+                      ImGuiConfigFlags_ViewportsEnable;
+
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+
+    ImGui_ImplGlfw_InitForOpenGL(ogl::Pipeline::get()->get_window()->get_internal(), true);
+    ImGui_ImplOpenGL3_Init("#version 450");
+}
+
+EditorWorkspace::~EditorWorkspace() {
+    for (PanelEditorWorkspaceBase* panel : m_panels) {
+        delete panel;
+    }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+}
+
+PanelEditorWorkspaceBase* EditorWorkspace::get_panel(std::string_view name) {
+    for (PanelEditorWorkspaceBase* panel : m_panels) {
+        if (panel->get_name() == name) {
+            return panel;
+        }
+    }
+
+    return nullptr;
+}
+
+void EditorWorkspace::remove_panel(std::string_view name) {
+    for (size_t i = 0; i < m_panels.size(); i++) {
+        if (m_panels[i]->get_name() == name) {
+            delete m_panels[i];
+            m_panels.erase(m_panels.begin() + i);
+            return;
+        }
+    }
+}
+
+void EditorWorkspace::push_panels(std::initializer_list<PanelEditorWorkspaceBase*> panels) {
+    for (PanelEditorWorkspaceBase* panel : panels) {
+        m_panels.push_back(panel);
+    }
+}
+
+void EditorWorkspace::on_update() {
+    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui::NewFrame();
+
+    for (PanelEditorWorkspaceBase* panel : m_panels) {
+        if (!panel->get_enabled()) {
+            if (panel->get_remove_when_disabled()) {
+                remove_panel(panel->get_name());
+            }
+        } else {
+            panel->on_imgui_update();
+        }
+    }
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    static ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        GLFWwindow* backup_context = glfwGetCurrentContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        glfwMakeContextCurrent(backup_context);
+    }
+}
+
+/******************************************************************************/
+/******************************** Base Windows ********************************/
+/******************************************************************************/
 
 DockingEditorWorkspace::DockingEditorWorkspace(EditorWorkspace* workspace)
     : PanelEditorWorkspaceBase("Docking") {
@@ -49,12 +162,17 @@ void DockingEditorWorkspace::on_imgui_update() {
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
+            if (ImGui::BeginMenu("Open")) {
+                ImGui::EndMenu();
+            }
+            if (ImGui::MenuItem("Save", "CTR+S")) {
+            }
 
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("Preferences")) {
-            if (ImGui::BeginMenu("Open Window")) {
+            if (ImGui::BeginMenu("Open Window Workspace")) {
                 const std::vector<PanelEditorWorkspaceBase*>& panels =
                     m_workspace->get_all_panels();
 
@@ -63,10 +181,13 @@ void DockingEditorWorkspace::on_imgui_update() {
                         ImGui::MenuItem(panel->get_name().c_str(), nullptr, &panel->get_enabled());
                     }
                 }
+
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("Preferences")) {
-                ImGui::EndMenu();
+            if (ImGui::MenuItem("Preferences")) {
+                if (m_workspace->get_panel("Preferences") == nullptr) {
+                    m_workspace->push_panel<PreferencesEditorWorkspace>(m_workspace);
+                }
             }
             ImGui::EndMenu();
         }
@@ -74,6 +195,8 @@ void DockingEditorWorkspace::on_imgui_update() {
     }
     ImGui::End();
 }
+
+void DockingEditorWorkspace::_menu_open_window(std::string_view panel_name) {}
 
 HierarchyEditorWorkspace::HierarchyEditorWorkspace() : PanelEditorWorkspaceBase("Hierarchy") {}
 
@@ -181,6 +304,7 @@ void ConsoleEditorWorkspace::on_imgui_update() {
 
     for (const std::tuple<ogl::DebugType, std::string, float>& log : m_debug->get_logs()) {
         if (std::get<bool>(m_filters[static_cast<size_t>(std::get<ogl::DebugType>(log))])) {
+            // TODO: Add the other DebugTypes
             switch (std::get<ogl::DebugType>(log)) {
             case ogl::DebugType_Warning:
                 ImGui::TextColored(
@@ -269,83 +393,28 @@ void ViewportEditorWorkspace::on_imgui_update() {
     ImGui::End();
 }
 
-EditorWorkspace::EditorWorkspace() {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable |
-                      ImGuiConfigFlags_ViewportsEnable;
+/******************************************************************************/
+/******************************* Pop Up Windows *******************************/
+/******************************************************************************/
 
-    ImGui::StyleColorsDark();
-    ImGuiStyle& style = ImGui::GetStyle();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        style.WindowRounding = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
+PreferencesEditorWorkspace::PreferencesEditorWorkspace(EditorWorkspace* workspace)
+    : PanelEditorWorkspaceBase("Preferences") {
 
-    ImGui_ImplGlfw_InitForOpenGL(ogl::Pipeline::get()->get_window()->get_internal(), true);
-    ImGui_ImplOpenGL3_Init("#version 450");
+#ifndef WIN32
+    m_path = ogl::FileSystem::get_env_var("HOME") + "/.config/oge";
+#else
+    m_path = ogl::FileSystem::get_env_var("APPDATA") + "\\oge";
+#endif
+
+    conf = ogl::YamlSerialization(m_path + "/preferences.yaml");
+    m_workspace = workspace;
+    get_remove_when_disabled() = true;
 }
 
-EditorWorkspace::~EditorWorkspace() {
-    for (PanelEditorWorkspaceBase* panel : m_panels) {
-        delete panel;
-    }
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-}
-
-PanelEditorWorkspaceBase* EditorWorkspace::get_panel(std::string_view name) {
-    for (PanelEditorWorkspaceBase* panel : m_panels) {
-        if (panel->get_name() == name) {
-            return panel;
-        }
-    }
-
-    return nullptr;
-}
-
-void EditorWorkspace::remove_panel(std::string_view name) {
-    for (size_t i = 0; i < m_panels.size(); i++) {
-        if (m_panels[i]->get_name() == name) {
-            delete m_panels[i];
-            m_panels.erase(m_panels.begin() + i);
-            return;
-        }
-    }
-}
-
-void EditorWorkspace::push_panels(std::initializer_list<PanelEditorWorkspaceBase*> panels) {
-    for (PanelEditorWorkspaceBase* panel : panels) {
-        m_panels.push_back(panel);
-    }
-}
-
-void EditorWorkspace::on_update() {
-    ImGui_ImplGlfw_NewFrame();
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui::NewFrame();
-
-    for (PanelEditorWorkspaceBase* panel : m_panels) {
-        if (panel->get_enabled()) {
-            panel->on_imgui_update();
-        }
-    }
-
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    static ImGuiIO& io = ImGui::GetIO();
-    (void)io;
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        GLFWwindow* backup_context = glfwGetCurrentContext();
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-        glfwMakeContextCurrent(backup_context);
-    }
+void PreferencesEditorWorkspace::on_imgui_update() {
+    ImGui::Begin(get_name().c_str(), &get_enabled());
+    ImGui::Text("This is a test");
+    ImGui::End();
 }
 
 } // namespace oge

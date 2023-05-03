@@ -2,6 +2,7 @@
 #define __OGE_CORE_EDITOR_HPP__
 
 #include <ogl/ogl.hpp>
+#include <ogl/utils/yaml_serialization.hpp>
 
 struct ImGuiIO;
 
@@ -14,7 +15,9 @@ class PanelEditorWorkspaceBase {
 
     inline const std::string& get_name() const { return m_name; }
     inline const bool& get_enabled() const { return m_enabled; }
+    inline const bool& get_remove_when_disabled() const { return m_remove_when_disabled; }
     inline bool& get_enabled() { return m_enabled; }
+    inline bool& get_remove_when_disabled() { return m_remove_when_disabled; }
 
     virtual void on_imgui_update() {}
 
@@ -26,16 +29,45 @@ class PanelEditorWorkspaceBase {
     std::string m_name{};
     ImGuiIO* m_io{nullptr};
     bool m_enabled{true};
+    bool m_remove_when_disabled{false};
 };
+
+class EditorWorkspace : public ogl::ApplicationLayer {
+  public:
+    EditorWorkspace();
+    virtual ~EditorWorkspace();
+
+    template<typename _Panel, typename... _Args> _Panel* push_panel(_Args&&... args) {
+        m_panels.push_back(new _Panel{std::forward<_Args>(args)...});
+        return static_cast<_Panel*>(m_panels.back());
+    }
+
+    PanelEditorWorkspaceBase* get_panel(std::string_view name);
+    const std::vector<PanelEditorWorkspaceBase*>& get_all_panels() { return m_panels; }
+    void remove_panel(std::string_view name);
+
+    void push_panels(std::initializer_list<PanelEditorWorkspaceBase*> panels);
+
+    virtual void on_update() override;
+
+  private:
+    std::vector<PanelEditorWorkspaceBase*> m_panels{};
+};
+
+/******************************************************************************/
+/******************************** Base Windows ********************************/
+/******************************************************************************/
 
 class DockingEditorWorkspace : public PanelEditorWorkspaceBase {
   public:
-    DockingEditorWorkspace(class EditorWorkspace* workspace);
+    DockingEditorWorkspace(EditorWorkspace* workspace);
     virtual ~DockingEditorWorkspace() override = default;
 
     virtual void on_imgui_update() override;
 
   private:
+    void _menu_open_window(std::string_view panel_name);
+
     class EditorWorkspace* m_workspace{nullptr};
     int m_dock_node_flags{};
     int m_window_flags{};
@@ -104,26 +136,21 @@ class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
     ogl::Framebuffer* m_framebuffer{nullptr};
 };
 
-class EditorWorkspace : public ogl::ApplicationLayer {
+/******************************************************************************/
+/******************************* Pop Up Windows *******************************/
+/******************************************************************************/
+
+class PreferencesEditorWorkspace : public PanelEditorWorkspaceBase {
   public:
-    EditorWorkspace();
-    virtual ~EditorWorkspace();
+    PreferencesEditorWorkspace(EditorWorkspace* workspace);
+    virtual ~PreferencesEditorWorkspace() override = default;
 
-    template<typename _Panel, typename... _Args> _Panel* push_panel(_Args&&... args) {
-        m_panels.push_back(new _Panel{std::forward<_Args>(args)...});
-        return static_cast<_Panel*>(m_panels.back());
-    }
-
-    PanelEditorWorkspaceBase* get_panel(std::string_view name);
-    const std::vector<PanelEditorWorkspaceBase*>& get_all_panels() { return m_panels; }
-    void remove_panel(std::string_view name);
-
-    void push_panels(std::initializer_list<PanelEditorWorkspaceBase*> panels);
-
-    virtual void on_update() override;
+    virtual void on_imgui_update() override;
 
   private:
-    std::vector<PanelEditorWorkspaceBase*> m_panels{};
+    ogl::YamlSerialization conf{};
+    std::string m_path{};
+    EditorWorkspace* m_workspace{nullptr};
 };
 
 } // namespace oge
