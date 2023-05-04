@@ -4,7 +4,30 @@
 #include <ogl/ogl.hpp>
 #include <ogl/utils/yaml_serialization.hpp>
 
+#define OGE_EDITOR_PREF_OPTION_UI 0
+#define OGE_EDITOR_PREF_OPTION_UI_COLOR 1
+
+#define OGE_EDITOR_PREF_UI_COLOR_WINDOW_BG 0
+#define OGE_EDITOR_PREF_UI_COLOR_HEADER 1
+#define OGE_EDITOR_PREF_UI_COLOR_HEADER_HOVERED 2
+#define OGE_EDITOR_PREF_UI_COLOR_HEADER_ACTIVE 3
+#define OGE_EDITOR_PREF_UI_COLOR_BUTTON 4
+#define OGE_EDITOR_PREF_UI_COLOR_BUTTON_HOVERED 5
+#define OGE_EDITOR_PREF_UI_COLOR_BUTTON_ACTIVE 6
+#define OGE_EDITOR_PREF_UI_COLOR_FRAME_BG 7
+#define OGE_EDITOR_PREF_UI_COLOR_FRAME_BG_HOVERED 8
+#define OGE_EDITOR_PREF_UI_COLOR_FRAME_BG_ACTIVE 9
+#define OGE_EDITOR_PREF_UI_COLOR_TAB 10
+#define OGE_EDITOR_PREF_UI_COLOR_TAB_HOVERED 11
+#define OGE_EDITOR_PREF_UI_COLOR_TAB_ACTIVE 12
+#define OGE_EDITOR_PREF_UI_COLOR_TAB_UNFOCUSED 13
+#define OGE_EDITOR_PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE 14
+#define OGE_EDITOR_PREF_UI_COLOR_TITLE_BG 15
+#define OGE_EDITOR_PREF_UI_COLOR_TITLE_BG_ACTIVE 16
+#define OGE_EDITOR_PREF_UI_COLOR_TITLE_BG_COLLAPSED 17
+
 struct ImGuiIO;
+struct ImFont;
 
 namespace oge {
 
@@ -53,6 +76,7 @@ class EditorWorkspace : public ogl::ApplicationLayer {
     virtual void on_update() override;
 
   private:
+    void _load_color_theme(ogl::YamlSerializationOption* ui_color);
     std::vector<PanelEditorWorkspaceBase*> m_panels{};
 };
 
@@ -116,6 +140,7 @@ class ConsoleEditorWorkspace : public PanelEditorWorkspaceBase {
     std::tuple<bool, std::string> m_filters[ogl::debug_type_count];
     bool m_auto_scrolling{true};
     ogl::Debug* m_debug{nullptr};
+    ImFont* m_font{nullptr};
 };
 
 class AssetsEditorWorkspace : public PanelEditorWorkspaceBase {

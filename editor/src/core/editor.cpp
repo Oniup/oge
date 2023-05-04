@@ -9,6 +9,8 @@
 
 namespace oge {
 
+ImVec4 convert_into_color(const glm::vec4& vec) { return ImVec4{vec.r, vec.g, vec.b, vec.a}; }
+
 enum ConsoleFileReadingStage {
     ConsoleFileReadingStage_Type,
     ConsoleFileReadingStage_TimeRecorded,
@@ -62,7 +64,8 @@ EditorWorkspace::EditorWorkspace() {
 
     std::string path = settings_path + "/preferences.yaml";
     ogl::YamlSerialization preferences = ogl::YamlSerialization(path);
-    ogl::YamlSerializationOption* ui = preferences.get_option("EditorUI");
+    ogl::YamlSerializationOption* ui = &preferences.get()[OGE_EDITOR_PREF_OPTION_UI];
+
     if (ui->get_option("reset_layout_on_open")->convert_value<bool>()) {
         std::remove("imgui.ini");
 
@@ -70,6 +73,34 @@ EditorWorkspace::EditorWorkspace() {
             ogl::Debug::log("Failed to load editor layout", ogl::DebugType_Error);
         }
     }
+
+    io.FontDefault = io.Fonts->AddFontFromFileTTF(
+        ui->get_option("font_regular")->convert_value<std::string>().c_str(), 18.0f
+    );
+
+  // PanelColors:
+  //   window_bg: [0.1, 0.105, 0.11, 1.0]
+  //   header: [0.2, 0.205, 0.21, 1.0]
+  //   header_hovered: [0.3, 0.305, 0.31, 1.0]
+  //   header_active: [0.15, 0.150, 0.151, 1.0]
+  //   button: [0.2, 0.205, 0.21, 1.0]
+  //   button_hovered: [0.3, 0.305, 0.31, 1.0]
+  //   button_active: [0.15, 0.150, 0.151, 1.0]
+  //   frame_bg: [0.2, 0.205, 0.21, 1.0]
+  //   frame_bg_hovered: [0.3, 0.305, 0.31, 1.0]
+  //   frame_bg_active: [0.15, 0.150, 0.151, 1.0]
+  //   tab: [0.15, 0.1505, 0.151, 1.0]
+  //   tab_hovered: [0.38, 0.3805, 0.381, 1.0]
+  //   tab_active: [0.28, 0.2805, 0.281, 1.0]
+  //   tab_unfocused: [0.15, 0.1505, 0.151, 1.0]
+  //   tab_unfocused_active: [0.2, 0.205, 0.21, 1.0]
+  //   title_bg: [0.15, 0.1505, 0.151, 1.0]
+  //   title_bg_active: [0.15, 0.1505, 0.151, 1.0]
+  //   title_bg_collapsed: [0.15, 0.1505, 0.151, 1.0]
+
+    // ogl::YamlSerializationOption* ui_color_theme =
+    //     &preferences.get()[OGE_EDITOR_PREF_OPTION_UI_COLOR];
+    // _load_color_theme(ui_color_theme);
 }
 
 EditorWorkspace::~EditorWorkspace() {
@@ -134,6 +165,64 @@ void EditorWorkspace::on_update() {
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_context);
     }
+}
+
+void EditorWorkspace::_load_color_theme(ogl::YamlSerializationOption* ui_color) {
+    auto& colors = ImGui::GetStyle().Colors;
+
+    colors[ImGuiCol_WindowBg] =
+        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_WINDOW_BG].convert_value<glm::vec4>());
+
+    colors[ImGuiCol_Header] =
+        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_HEADER].convert_value<glm::vec4>());
+    colors[ImGuiCol_HeaderHovered] = convert_into_color(
+        ui_color[OGE_EDITOR_PREF_UI_COLOR_HEADER_HOVERED].convert_value<glm::vec4>()
+    );
+    colors[ImGuiCol_HeaderActive] = convert_into_color(
+        ui_color[OGE_EDITOR_PREF_UI_COLOR_HEADER_ACTIVE].convert_value<glm::vec4>()
+    );
+
+    colors[ImGuiCol_Button] =
+        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_BUTTON].convert_value<glm::vec4>());
+    colors[ImGuiCol_ButtonHovered] = convert_into_color(
+        ui_color[OGE_EDITOR_PREF_UI_COLOR_BUTTON_HOVERED].convert_value<glm::vec4>()
+    );
+    colors[ImGuiCol_ButtonActive] = convert_into_color(
+        ui_color[OGE_EDITOR_PREF_UI_COLOR_BUTTON_ACTIVE].convert_value<glm::vec4>()
+    );
+
+    colors[ImGuiCol_FrameBg] =
+        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_FRAME_BG].convert_value<glm::vec4>());
+    colors[ImGuiCol_FrameBgHovered] = convert_into_color(
+        ui_color[OGE_EDITOR_PREF_UI_COLOR_FRAME_BG_HOVERED].convert_value<glm::vec4>()
+    );
+    colors[ImGuiCol_FrameBgActive] = convert_into_color(
+        ui_color[OGE_EDITOR_PREF_UI_COLOR_FRAME_BG_ACTIVE].convert_value<glm::vec4>()
+    );
+
+    colors[ImGuiCol_Tab] =
+        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_TAB].convert_value<glm::vec4>());
+    colors[ImGuiCol_TabHovered] =
+        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_TAB_HOVERED].convert_value<glm::vec4>()
+        );
+    colors[ImGuiCol_TabActive] =
+        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_TAB_ACTIVE].convert_value<glm::vec4>()
+        );
+    colors[ImGuiCol_TabUnfocused] = convert_into_color(
+        ui_color[OGE_EDITOR_PREF_UI_COLOR_TAB_UNFOCUSED].convert_value<glm::vec4>()
+    );
+    colors[ImGuiCol_TabUnfocusedActive] = convert_into_color(
+        ui_color[OGE_EDITOR_PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE].convert_value<glm::vec4>()
+    );
+
+    colors[ImGuiCol_TitleBg] =
+        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_TITLE_BG].convert_value<glm::vec4>());
+    colors[ImGuiCol_TitleBgActive] = convert_into_color(
+        ui_color[OGE_EDITOR_PREF_UI_COLOR_TITLE_BG_ACTIVE].convert_value<glm::vec4>()
+    );
+    colors[ImGuiCol_TitleBgCollapsed] = convert_into_color(
+        ui_color[OGE_EDITOR_PREF_UI_COLOR_TITLE_BG_COLLAPSED].convert_value<glm::vec4>()
+    );
 }
 
 /******************************************************************************/
@@ -222,7 +311,8 @@ void HierarchyEditorWorkspace::on_imgui_update() {
         ogl::Entity entity = ogl::Entity(entities[i]);
         ogl::NameComponent* name = entity.get_component<ogl::NameComponent>();
 
-        int flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        int flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                    ImGuiTreeNodeFlags_SpanFullWidth;
         if (m_selected_entity == entities[i]) {
             flags |= ImGuiTreeNodeFlags_Selected;
         }
@@ -283,6 +373,23 @@ ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
         std::get<std::string>(m_filters[i]) = std::move(names[i]);
     }
 
+#ifndef WIN32
+    std::string settings_path =
+        ogl::FileSystem::get_env_var("HOME") + "/.config/oge/preferences.yaml";
+#else
+    std::string settings_path = ogl::FileSystem::get_env_var("APPDATA") + "/oge/preferences.yaml";
+#endif
+
+    ogl::YamlSerialization preferences = ogl::YamlSerialization(settings_path.c_str());
+    ogl::YamlSerializationOption* ui = preferences.get_option("EditorUI");
+
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+
+    m_font = io.Fonts->AddFontFromFileTTF(
+        ui->get_option("font_mono")->convert_value<std::string>().c_str(), 18.0f
+    );
+
     m_debug = debug;
 }
 
@@ -312,6 +419,8 @@ void ConsoleEditorWorkspace::on_imgui_update() {
         }
         ImGui::EndMenuBar();
     }
+
+    ImGui::PushFont(m_font);
 
     for (const std::tuple<ogl::DebugType, std::string, float>& log : m_debug->get_logs()) {
         if (std::get<bool>(m_filters[static_cast<size_t>(std::get<ogl::DebugType>(log))])) {
@@ -348,6 +457,8 @@ void ConsoleEditorWorkspace::on_imgui_update() {
         ImGui::SetScrollHereY(1.0f);
     }
 
+    ImGui::PopFont();
+
     ImGui::End();
 }
 
@@ -383,7 +494,8 @@ void ViewportEditorWorkspace::on_imgui_update() {
                 m_framebuffer, static_cast<int>(window_size.x), static_cast<int>(window_size.y)
             );
             if (m_framebuffer == nullptr) {
-                ogl::Debug::log("Viewport::on_imgui_update() -> failed to resize framebuffer size");
+                ogl::Debug::log("Viewport::on_imgui_update() -> failed to resize "
+                                "framebuffer size");
                 return;
             }
         }
