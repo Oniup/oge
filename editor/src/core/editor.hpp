@@ -14,10 +14,12 @@ class PanelEditorWorkspaceBase {
     virtual ~PanelEditorWorkspaceBase() = default;
 
     inline const std::string& get_name() const { return m_name; }
-    inline const bool& get_enabled() const { return m_enabled; }
-    inline const bool& get_remove_when_disabled() const { return m_remove_when_disabled; }
+    inline bool get_enabled() const { return m_enabled; }
+    inline bool get_remove_when_disabled() const { return m_remove_when_disabled; }
     inline bool& get_enabled() { return m_enabled; }
     inline bool& get_remove_when_disabled() { return m_remove_when_disabled; }
+
+    bool remove_modal_popup(std::string_view name);
 
     virtual void on_imgui_update() {}
 
@@ -140,17 +142,17 @@ class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
 /******************************* Pop Up Windows *******************************/
 /******************************************************************************/
 
-class PreferencesEditorWorkspace : public PanelEditorWorkspaceBase {
+class PreferencesEditorPopup : public PanelEditorWorkspaceBase {
   public:
-    PreferencesEditorWorkspace(EditorWorkspace* workspace);
-    virtual ~PreferencesEditorWorkspace() override = default;
+    PreferencesEditorPopup();
+    virtual ~PreferencesEditorPopup() override = default;
 
     virtual void on_imgui_update() override;
 
   private:
     ogl::YamlSerialization conf{};
     std::string m_path{};
-    EditorWorkspace* m_workspace{nullptr};
+    bool m_unsaved = false;
 };
 
 } // namespace oge

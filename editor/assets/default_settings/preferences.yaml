@@ -1,0 +1,3 @@
+EditorUI:
+  layout: 'default.ini'
+  reset_layout_on_open: true

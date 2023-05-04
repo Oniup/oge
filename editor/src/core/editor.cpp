@@ -18,6 +18,27 @@ enum ConsoleFileReadingStage {
 PanelEditorWorkspaceBase::PanelEditorWorkspaceBase(std::string_view name) : m_name(name) {
     m_io = &ImGui::GetIO();
     static_cast<void>(*m_io);
+}
+
+EditorWorkspace::EditorWorkspace() {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable |
+                      ImGuiConfigFlags_ViewportsEnable;
+
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+
+    ImGui_ImplGlfw_InitForOpenGL(ogl::Pipeline::get()->get_window()->get_internal(), true);
+    ImGui_ImplOpenGL3_Init("#version 450");
+
+    // Settings Preferences
 
     // FIX: Make sure this works on windows
 #ifndef WIN32
@@ -39,29 +60,16 @@ PanelEditorWorkspaceBase::PanelEditorWorkspaceBase(std::string_view name) : m_na
         settings.set_directory(settings_path);
     }
 
-    std::remove("imgui.ini");
-    if (!ogl::FileSystem::copy_file(settings_path + "/layouts/default.ini", "imgui.ini")) {
-        ogl::Debug::log("Failed to load editor layout", ogl::DebugType_Error);
+    std::string path = settings_path + "/preferences.yaml";
+    ogl::YamlSerialization preferences = ogl::YamlSerialization(path);
+    ogl::YamlSerializationOption* ui = preferences.get_option("EditorUI");
+    if (ui->get_option("reset_layout_on_open")->convert_value<bool>()) {
+        std::remove("imgui.ini");
+
+        if (!ogl::FileSystem::copy_file(settings_path + "/layouts/default.ini", "imgui.ini")) {
+            ogl::Debug::log("Failed to load editor layout", ogl::DebugType_Error);
+        }
     }
-}
-
-EditorWorkspace::EditorWorkspace() {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable |
-                      ImGuiConfigFlags_ViewportsEnable;
-
-    ImGui::StyleColorsDark();
-    ImGuiStyle& style = ImGui::GetStyle();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        style.WindowRounding = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
-
-    ImGui_ImplGlfw_InitForOpenGL(ogl::Pipeline::get()->get_window()->get_internal(), true);
-    ImGui_ImplOpenGL3_Init("#version 450");
 }
 
 EditorWorkspace::~EditorWorkspace() {
@@ -161,18 +169,18 @@ void DockingEditorWorkspace::on_imgui_update() {
     ImGui::DockSpace(dock_space_id, ImVec2(0.0f, 0.0f), m_dock_node_flags);
 
     if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-            if (ImGui::BeginMenu("Open")) {
+        if (ImGui::BeginMenu("file")) {
+            if (ImGui::BeginMenu("open")) {
                 ImGui::EndMenu();
             }
-            if (ImGui::MenuItem("Save", "CTR+S")) {
+            if (ImGui::MenuItem("save", "CTR+S")) {
             }
 
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Preferences")) {
-            if (ImGui::BeginMenu("Open Window Workspace")) {
+        if (ImGui::BeginMenu("view")) {
+            if (ImGui::BeginMenu("workspaces")) {
                 const std::vector<PanelEditorWorkspaceBase*>& panels =
                     m_workspace->get_all_panels();
 
@@ -184,15 +192,18 @@ void DockingEditorWorkspace::on_imgui_update() {
 
                 ImGui::EndMenu();
             }
+
             if (ImGui::MenuItem("Preferences")) {
                 if (m_workspace->get_panel("Preferences") == nullptr) {
-                    m_workspace->push_panel<PreferencesEditorWorkspace>(m_workspace);
+                    m_workspace->push_panel<PreferencesEditorPopup>();
                 }
             }
+
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
     }
+
     ImGui::End();
 }
 
@@ -397,23 +408,59 @@ void ViewportEditorWorkspace::on_imgui_update() {
 /******************************* Pop Up Windows *******************************/
 /******************************************************************************/
 
-PreferencesEditorWorkspace::PreferencesEditorWorkspace(EditorWorkspace* workspace)
-    : PanelEditorWorkspaceBase("Preferences") {
-
+PreferencesEditorPopup::PreferencesEditorPopup() : PanelEditorWorkspaceBase("Preferences") {
 #ifndef WIN32
     m_path = ogl::FileSystem::get_env_var("HOME") + "/.config/oge";
 #else
     m_path = ogl::FileSystem::get_env_var("APPDATA") + "\\oge";
 #endif
 
-    conf = ogl::YamlSerialization(m_path + "/preferences.yaml");
-    m_workspace = workspace;
     get_remove_when_disabled() = true;
+    m_unsaved = true;
 }
 
-void PreferencesEditorWorkspace::on_imgui_update() {
-    ImGui::Begin(get_name().c_str(), &get_enabled());
+void PreferencesEditorPopup::on_imgui_update() {
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
+    if (m_unsaved) {
+        window_flags |= ImGuiWindowFlags_UnsavedDocument;
+    }
+
+    ImGui::Begin(get_name().c_str(), nullptr, window_flags);
+
     ImGui::Text("This is a test");
+
+    if (m_unsaved) {
+        if (ImGui::Button("Save Changes")) {
+            m_unsaved = false;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Close")) {
+            ImGui::OpenPopup("Don't Save?");
+        }
+
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("Don't Save?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Sure you want to close? Will lose all unsaved changes!");
+
+            if (ImGui::Button("Ok")) {
+                get_enabled() = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    } else {
+        if (ImGui::Button("Close")) {
+            get_enabled() = false;
+        }
+    }
+
     ImGui::End();
 }
 
