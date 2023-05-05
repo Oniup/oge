@@ -7,9 +7,37 @@
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/imgui.h>
 
+#define PREF_FIELD_EDITOR_UI "editor_ui"
+#define PREF_FIELD_EDITOR_UI_COLOR "color_theme"
+
+#define PREF_EDITOR_UI_FONT_REGULAR "font_regular"
+#define PREF_EDITOR_UI_FONT_ITALIC "font_italics"
+#define PREF_EDITOR_UI_FONT_BOLD "font_bold"
+#define PREF_EDITOR_UI_FONT_BOLD_ITALIC "font_bold_italics"
+#define PREF_EDITOR_UI_FONT_MONO "font_mono"
+
+#define PREF_UI_COLOR_WINDOW_BG 0
+#define PREF_UI_COLOR_HEADER 1
+#define PREF_UI_COLOR_HEADER_HOVERED 2
+#define PREF_UI_COLOR_HEADER_ACTIVE 3
+#define PREF_UI_COLOR_BUTTON 4
+#define PREF_UI_COLOR_BUTTON_HOVERED 5
+#define PREF_UI_COLOR_BUTTON_ACTIVE 6
+#define PREF_UI_COLOR_FRAME_BG 7
+#define PREF_UI_COLOR_FRAME_BG_HOVERED 8
+#define PREF_UI_COLOR_FRAME_BG_ACTIVE 9
+#define PREF_UI_COLOR_TAB 10
+#define PREF_UI_COLOR_TAB_HOVERED 11
+#define PREF_UI_COLOR_TAB_ACTIVE 12
+#define PREF_UI_COLOR_TAB_UNFOCUSED 13
+#define PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE 14
+#define PREF_UI_COLOR_TITLE_BG 15
+#define PREF_UI_COLOR_TITLE_BG_ACTIVE 16
+#define PREF_UI_COLOR_TITLE_BG_COLLAPSED 17
+
 namespace oge {
 
-ImVec4 convert_into_color(const glm::vec4& vec) { return ImVec4{vec.r, vec.g, vec.b, vec.a}; }
+ImVec4 convert_into_color(const glm::vec4& vec) { return ImVec4{vec.x, vec.y, vec.z, vec.w}; }
 
 enum ConsoleFileReadingStage {
     ConsoleFileReadingStage_Type,
@@ -64,7 +92,7 @@ EditorWorkspace::EditorWorkspace() {
 
     std::string path = settings_path + "/preferences.yaml";
     ogl::YamlSerialization preferences = ogl::YamlSerialization(path);
-    ogl::YamlSerializationOption* ui = &preferences.get()[OGE_EDITOR_PREF_OPTION_UI];
+    ogl::YamlSerializationOption* ui = preferences.get_option(PREF_FIELD_EDITOR_UI);
 
     if (ui->get_option("reset_layout_on_open")->convert_value<bool>()) {
         std::remove("imgui.ini");
@@ -78,29 +106,8 @@ EditorWorkspace::EditorWorkspace() {
         ui->get_option("font_regular")->convert_value<std::string>().c_str(), 18.0f
     );
 
-  // PanelColors:
-  //   window_bg: [0.1, 0.105, 0.11, 1.0]
-  //   header: [0.2, 0.205, 0.21, 1.0]
-  //   header_hovered: [0.3, 0.305, 0.31, 1.0]
-  //   header_active: [0.15, 0.150, 0.151, 1.0]
-  //   button: [0.2, 0.205, 0.21, 1.0]
-  //   button_hovered: [0.3, 0.305, 0.31, 1.0]
-  //   button_active: [0.15, 0.150, 0.151, 1.0]
-  //   frame_bg: [0.2, 0.205, 0.21, 1.0]
-  //   frame_bg_hovered: [0.3, 0.305, 0.31, 1.0]
-  //   frame_bg_active: [0.15, 0.150, 0.151, 1.0]
-  //   tab: [0.15, 0.1505, 0.151, 1.0]
-  //   tab_hovered: [0.38, 0.3805, 0.381, 1.0]
-  //   tab_active: [0.28, 0.2805, 0.281, 1.0]
-  //   tab_unfocused: [0.15, 0.1505, 0.151, 1.0]
-  //   tab_unfocused_active: [0.2, 0.205, 0.21, 1.0]
-  //   title_bg: [0.15, 0.1505, 0.151, 1.0]
-  //   title_bg_active: [0.15, 0.1505, 0.151, 1.0]
-  //   title_bg_collapsed: [0.15, 0.1505, 0.151, 1.0]
-
-    // ogl::YamlSerializationOption* ui_color_theme =
-    //     &preferences.get()[OGE_EDITOR_PREF_OPTION_UI_COLOR];
-    // _load_color_theme(ui_color_theme);
+    ogl::YamlSerializationOption* color_theme = ui->get_option(PREF_FIELD_EDITOR_UI_COLOR);
+    _load_color_theme(color_theme);
 }
 
 EditorWorkspace::~EditorWorkspace() {
@@ -171,58 +178,46 @@ void EditorWorkspace::_load_color_theme(ogl::YamlSerializationOption* ui_color) 
     auto& colors = ImGui::GetStyle().Colors;
 
     colors[ImGuiCol_WindowBg] =
-        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_WINDOW_BG].convert_value<glm::vec4>());
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_WINDOW_BG].convert_value<glm::vec4>());
 
     colors[ImGuiCol_Header] =
-        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_HEADER].convert_value<glm::vec4>());
-    colors[ImGuiCol_HeaderHovered] = convert_into_color(
-        ui_color[OGE_EDITOR_PREF_UI_COLOR_HEADER_HOVERED].convert_value<glm::vec4>()
-    );
-    colors[ImGuiCol_HeaderActive] = convert_into_color(
-        ui_color[OGE_EDITOR_PREF_UI_COLOR_HEADER_ACTIVE].convert_value<glm::vec4>()
-    );
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER].convert_value<glm::vec4>());
+    colors[ImGuiCol_HeaderHovered] =
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER_HOVERED].convert_value<glm::vec4>());
+    colors[ImGuiCol_HeaderActive] =
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER_ACTIVE].convert_value<glm::vec4>());
 
     colors[ImGuiCol_Button] =
-        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_BUTTON].convert_value<glm::vec4>());
-    colors[ImGuiCol_ButtonHovered] = convert_into_color(
-        ui_color[OGE_EDITOR_PREF_UI_COLOR_BUTTON_HOVERED].convert_value<glm::vec4>()
-    );
-    colors[ImGuiCol_ButtonActive] = convert_into_color(
-        ui_color[OGE_EDITOR_PREF_UI_COLOR_BUTTON_ACTIVE].convert_value<glm::vec4>()
-    );
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON].convert_value<glm::vec4>());
+    colors[ImGuiCol_ButtonHovered] =
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON_HOVERED].convert_value<glm::vec4>());
+    colors[ImGuiCol_ButtonActive] =
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON_ACTIVE].convert_value<glm::vec4>());
 
     colors[ImGuiCol_FrameBg] =
-        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_FRAME_BG].convert_value<glm::vec4>());
-    colors[ImGuiCol_FrameBgHovered] = convert_into_color(
-        ui_color[OGE_EDITOR_PREF_UI_COLOR_FRAME_BG_HOVERED].convert_value<glm::vec4>()
-    );
-    colors[ImGuiCol_FrameBgActive] = convert_into_color(
-        ui_color[OGE_EDITOR_PREF_UI_COLOR_FRAME_BG_ACTIVE].convert_value<glm::vec4>()
-    );
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_FRAME_BG].convert_value<glm::vec4>());
+    colors[ImGuiCol_FrameBgHovered] =
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_FRAME_BG_HOVERED].convert_value<glm::vec4>());
+    colors[ImGuiCol_FrameBgActive] =
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_FRAME_BG_ACTIVE].convert_value<glm::vec4>());
 
     colors[ImGuiCol_Tab] =
-        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_TAB].convert_value<glm::vec4>());
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB].convert_value<glm::vec4>());
     colors[ImGuiCol_TabHovered] =
-        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_TAB_HOVERED].convert_value<glm::vec4>()
-        );
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_HOVERED].convert_value<glm::vec4>());
     colors[ImGuiCol_TabActive] =
-        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_TAB_ACTIVE].convert_value<glm::vec4>()
-        );
-    colors[ImGuiCol_TabUnfocused] = convert_into_color(
-        ui_color[OGE_EDITOR_PREF_UI_COLOR_TAB_UNFOCUSED].convert_value<glm::vec4>()
-    );
-    colors[ImGuiCol_TabUnfocusedActive] = convert_into_color(
-        ui_color[OGE_EDITOR_PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE].convert_value<glm::vec4>()
-    );
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_ACTIVE].convert_value<glm::vec4>());
+    colors[ImGuiCol_TabUnfocused] =
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_UNFOCUSED].convert_value<glm::vec4>());
+    colors[ImGuiCol_TabUnfocusedActive] =
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE].convert_value<glm::vec4>());
 
     colors[ImGuiCol_TitleBg] =
-        convert_into_color(ui_color[OGE_EDITOR_PREF_UI_COLOR_TITLE_BG].convert_value<glm::vec4>());
-    colors[ImGuiCol_TitleBgActive] = convert_into_color(
-        ui_color[OGE_EDITOR_PREF_UI_COLOR_TITLE_BG_ACTIVE].convert_value<glm::vec4>()
-    );
-    colors[ImGuiCol_TitleBgCollapsed] = convert_into_color(
-        ui_color[OGE_EDITOR_PREF_UI_COLOR_TITLE_BG_COLLAPSED].convert_value<glm::vec4>()
-    );
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_TITLE_BG].convert_value<glm::vec4>());
+    colors[ImGuiCol_TitleBgActive] =
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_TITLE_BG_ACTIVE].convert_value<glm::vec4>());
+    colors[ImGuiCol_TitleBgCollapsed] =
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_TITLE_BG_COLLAPSED].convert_value<glm::vec4>());
 }
 
 /******************************************************************************/
@@ -340,10 +335,10 @@ void HierarchyEditorWorkspace::on_imgui_update() {
     ImGui::End();
 }
 
-InspectorEditorWorkspace::InspectorEditorWorkspace(HierarchyEditorWorkspace* hierarchy)
-    : PanelEditorWorkspaceBase("Inspector"), m_hierarchy(hierarchy) {}
+PropertiesEditorWorkspace::PropertiesEditorWorkspace(HierarchyEditorWorkspace* hierarchy)
+    : PanelEditorWorkspaceBase("Properties"), m_hierarchy(hierarchy) {}
 
-void InspectorEditorWorkspace::on_imgui_update() {
+void PropertiesEditorWorkspace::on_imgui_update() {
     ImGui::Begin(get_name().c_str(), &get_enabled());
 
     if (m_hierarchy->get_selected_entity() != m_hierarchy->get_non_selected_entity_value()) {
@@ -381,7 +376,7 @@ ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
 #endif
 
     ogl::YamlSerialization preferences = ogl::YamlSerialization(settings_path.c_str());
-    ogl::YamlSerializationOption* ui = preferences.get_option("EditorUI");
+    ogl::YamlSerializationOption* ui = preferences.get_option(PREF_FIELD_EDITOR_UI);
 
     ImGuiIO& io = ImGui::GetIO();
     (void)io;

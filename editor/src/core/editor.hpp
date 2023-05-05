@@ -4,28 +4,6 @@
 #include <ogl/ogl.hpp>
 #include <ogl/utils/yaml_serialization.hpp>
 
-#define OGE_EDITOR_PREF_OPTION_UI 0
-#define OGE_EDITOR_PREF_OPTION_UI_COLOR 1
-
-#define OGE_EDITOR_PREF_UI_COLOR_WINDOW_BG 0
-#define OGE_EDITOR_PREF_UI_COLOR_HEADER 1
-#define OGE_EDITOR_PREF_UI_COLOR_HEADER_HOVERED 2
-#define OGE_EDITOR_PREF_UI_COLOR_HEADER_ACTIVE 3
-#define OGE_EDITOR_PREF_UI_COLOR_BUTTON 4
-#define OGE_EDITOR_PREF_UI_COLOR_BUTTON_HOVERED 5
-#define OGE_EDITOR_PREF_UI_COLOR_BUTTON_ACTIVE 6
-#define OGE_EDITOR_PREF_UI_COLOR_FRAME_BG 7
-#define OGE_EDITOR_PREF_UI_COLOR_FRAME_BG_HOVERED 8
-#define OGE_EDITOR_PREF_UI_COLOR_FRAME_BG_ACTIVE 9
-#define OGE_EDITOR_PREF_UI_COLOR_TAB 10
-#define OGE_EDITOR_PREF_UI_COLOR_TAB_HOVERED 11
-#define OGE_EDITOR_PREF_UI_COLOR_TAB_ACTIVE 12
-#define OGE_EDITOR_PREF_UI_COLOR_TAB_UNFOCUSED 13
-#define OGE_EDITOR_PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE 14
-#define OGE_EDITOR_PREF_UI_COLOR_TITLE_BG 15
-#define OGE_EDITOR_PREF_UI_COLOR_TITLE_BG_ACTIVE 16
-#define OGE_EDITOR_PREF_UI_COLOR_TITLE_BG_COLLAPSED 17
-
 struct ImGuiIO;
 struct ImFont;
 
@@ -116,10 +94,10 @@ class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase {
         static_cast<entt::entity>(std::numeric_limits<uint32_t>().max())};
 };
 
-class InspectorEditorWorkspace : public PanelEditorWorkspaceBase {
+class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase {
   public:
-    InspectorEditorWorkspace(HierarchyEditorWorkspace* hierarchy);
-    virtual ~InspectorEditorWorkspace() override = default;
+    PropertiesEditorWorkspace(HierarchyEditorWorkspace* hierarchy);
+    virtual ~PropertiesEditorWorkspace() override = default;
 
     virtual void on_imgui_update() override;
 

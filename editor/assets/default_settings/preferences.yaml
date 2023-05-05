@@ -1,4 +1,4 @@
-EditorUI:
+editor_ui:
   layout: 'default.ini'
   reset_layout_on_open: true
   font_regular: 'editor/assets/fonts/mulish/Mulish-Regular.ttf'
@@ -6,3 +6,22 @@ EditorUI:
   font_bold: 'editor/assets/fonts/mulish/Mulish-Bold.ttf'
   font_bold_italics: 'editor/assets/fonts/mulish/Mulish-BoldItalic.ttf'
   font_mono: 'editor/assets/fonts/jetbrain_mono/JetBrainsMonoNLNerdFont-Regular.ttf'
+  color_theme:
+    window_bg: [0.1, 0.105, 0.11, 1.0]
+    header: [0.2, 0.205, 0.21, 1.0]
+    header_hovered: [0.3, 0.305, 0.31, 1.0]
+    header_active: [0.15, 0.150, 0.151, 1.0]
+    button: [0.2, 0.205, 0.21, 1.0]
+    button_hovered: [0.3, 0.305, 0.31, 1.0]
+    button_active: [0.15, 0.150, 0.151, 1.0]
+    frame_bg: [0.2, 0.205, 0.21, 1.0]
+    frame_bg_hovered: [0.3, 0.305, 0.31, 1.0]
+    frame_bg_active: [0.15, 0.150, 0.151, 1.0]
+    tab: [0.15, 0.1505, 0.151, 1.0]
+    tab_hovered: [0.38, 0.3805, 0.381, 1.0]
+    tab_active: [0.28, 0.2805, 0.281, 1.0]
+    tab_unfocused: [0.15, 0.1505, 0.151, 1.0]
+    tab_unfocused_active: [0.2, 0.205, 0.21, 1.0]
+    title_bg: [0.15, 0.1505, 0.151, 1.0]
+    title_bg_active: [0.15, 0.1505, 0.151, 1.0]
+    title_bg_collapsed: [0.15, 0.1505, 0.151, 1.0]

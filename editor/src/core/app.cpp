@@ -29,7 +29,7 @@ App::App() {
         new HierarchyEditorWorkspace(),
         new AssetsEditorWorkspace(),
     });
-    workspace->push_panel<InspectorEditorWorkspace>(
+    workspace->push_panel<PropertiesEditorWorkspace>(
         static_cast<HierarchyEditorWorkspace*>(workspace->get_panel("Hierarchy"))
     );
 
@@ -83,29 +83,6 @@ App::App() {
     light_transform->position = glm::vec3(1.0f, 1.0f, -1.0f);
     light_comp->color = glm::vec3(0.7f, 1.0f, 1.0f);
     light_comp->position = light_transform->position;
-
-    // ogl::YamlSerialization conf = ogl::YamlSerialization("test_data.yaml");
-    // conf.debug_log();
-    //
-    // conf.clear(); // override file otherwise it'll append the following new
-    // settings for (size_t i = 0; i < 3; i++) {
-    //     ogl::YamlSerializationOption* comp =
-    //         conf.push_option(ogl::YamlSerializationOption("Ent:1"));
-    //     comp->scope.push_back(ogl::YamlSerializationOption("ogl::TransformComponent"));
-    //     comp->scope[0].scope = {
-    //         {"position", "glm::vec3(1, 2, 3)"},
-    //         {"scale", "glm::vec3(1, 1, 1)"},
-    //         {"rotation", "glm::vec4(0, 0, 1, 0)"},
-    //     };
-    //
-    //     comp->scope.push_back(ogl::YamlSerializationOption("ogl::PlayerController"));
-    //     comp->scope[1].scope = {
-    //         {"move_speed", "5.0"},
-    //         {"damage", "5.0"},
-    //     };
-    // }
-    //
-    // conf.write_changes();
 }
 
 } // namespace oge
