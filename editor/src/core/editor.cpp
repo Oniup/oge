@@ -522,27 +522,64 @@ void ViewportEditorWorkspace::on_imgui_update() {
 /******************************* Pop Up Windows *******************************/
 /******************************************************************************/
 
-void preferences_layout_and_gui(const std::string& name, bool& is_unsaved) {
-    if (ImGui::Button("Select to set to unsave state")) {
-        is_unsaved = true;
+/******************************** Preferences *********************************/
+
+class PreferencesLayoutAndGui : public PreferencesMenuBase {
+  public:
+    PreferencesLayoutAndGui(ogl::YamlSerializationOption* target_field)
+        : PreferencesMenuBase("GUI and Layout", target_field) {}
+
+    virtual void on_imgui_draw(bool& is_unsaved) override {
+        if (ImGui::Button("Select to set to unsave state")) {
+            is_unsaved = true;
+        }
     }
-}
 
-void preferences_key_bindings(const std::string& name, bool& is_unsaved) {
-    ImGui::Text("Coming Soon ...");
-}
+  private:
+};
 
-PreferencesEditorPopup::PreferencesEditorPopup()
-    : PanelEditorWorkspaceBase("Preferences"),
-      m_settings({
-          std::make_tuple("GUI and Layout", preferences_layout_and_gui),
-          std::make_tuple("Key Bindings", preferences_key_bindings),
-      }) {
+class PreferencesKeyBindings : public PreferencesMenuBase {
+  public:
+    PreferencesKeyBindings(ogl::YamlSerializationOption* target_field)
+        : PreferencesMenuBase("Key Bindings", target_field) {}
+
+    virtual void on_imgui_draw(bool& is_unsaved) override { ImGui::Text("Coming Soon ..."); }
+};
+
+PreferencesEditorPopup::PreferencesEditorPopup() : PanelEditorWorkspaceBase("Preferences") {
 #ifndef WIN32
-    m_path = ogl::FileSystem::get_env_var("HOME") + "/.config/oge";
+    m_path = ogl::FileSystem::get_env_var("HOME") + "/.config/oge/preferences.yaml";
 #else
-    m_path = ogl::FileSystem::get_env_var("APPDATA") + "\\oge";
+    m_path = ogl::FileSystem::get_env_var("APPDATA") + "\\oge\\preferences.yaml";
 #endif
+
+    conf = ogl::YamlSerialization(m_path);
+    if (!conf.is_null()) {
+        m_settings = {
+            new PreferencesLayoutAndGui(conf.get_option(PREF_FIELD_EDITOR_UI)),
+            new PreferencesKeyBindings(conf.get_option(PREF_FIELD_EDITOR_UI)
+            ), // TODO: Need to chang the field when finally gonna implement this functionality
+        };
+
+        // Validation
+        for (PreferencesMenuBase* menu : m_settings) {
+            if (menu->failed_to_get_field()) {
+                ogl::Debug::log(
+                    "Failed to load Preference Menu: " + menu->get_name() +
+                    ", as it could not find the options needed in preferences.yaml [" + m_path + "]"
+                );
+                get_enabled() = false;
+                break;
+            }
+        }
+    } else {
+        ogl::Debug::log(
+            "Failed to open Preferences as the preferences yaml file at [" + m_path +
+                "] doesn't exist",
+            ogl::DebugType_Error
+        );
+        get_enabled() = false;
+    }
 
     get_remove_when_disabled() = true;
     m_unsaved = false;
@@ -601,10 +638,10 @@ void PreferencesEditorPopup::on_imgui_update() {
             tree_flags |= ImGuiTreeNodeFlags_Selected;
         }
 
-        ImGui::TreeNodeEx(std::get<const std::string>(m_settings[i]).c_str(), tree_flags);
+        ImGui::TreeNodeEx(m_settings[i]->get_name().c_str(), tree_flags);
         if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
             m_selected_index = i;
-            m_selected_menu = &m_settings[i];
+            m_selected_menu = m_settings[i];
         }
     }
     ImGui::EndChild();
@@ -612,14 +649,14 @@ void PreferencesEditorPopup::on_imgui_update() {
     ImGui::SameLine();
 
     if (m_selected_menu != nullptr) {
+        // Draw menu settings
         ImGui::BeginChild(
             "Selected Menu", ImVec2(ImGui::GetContentRegionAvail().x, 0), true, child_menu_flags
         );
-        std::get<fnptr_preferences_settings_menu> (*m_selected_menu)(
-            std::get<const std::string>(*m_selected_menu), m_unsaved
-        );
+        m_selected_menu->on_imgui_draw(m_unsaved);
         ImGui::EndChild();
     } else {
+        // Draw empty settings
         ImGui::BeginChild(
             "Selected Menu", ImVec2(ImGui::GetContentRegionAvail().x, 0), true, child_menu_flags
         );

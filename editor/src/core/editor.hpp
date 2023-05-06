@@ -145,7 +145,22 @@ class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
 /******************************* Pop Up Windows *******************************/
 /******************************************************************************/
 
-typedef void (*fnptr_preferences_settings_menu)(const std::string&, bool&);
+class PreferencesMenuBase {
+  public:
+    PreferencesMenuBase(const std::string& name, ogl::YamlSerializationOption* target_field)
+        : m_name(name), m_field(target_field) {}
+    virtual ~PreferencesMenuBase() = default;
+    const std::string& get_name() const { return m_name; }
+    inline bool failed_to_get_field() const { return m_field == nullptr; }
+    virtual void on_imgui_draw(bool& is_unsaved) = 0;
+
+  protected:
+    ogl::YamlSerializationOption* get_field() { return m_field; }
+
+  private:
+    ogl::YamlSerializationOption* m_field{nullptr};
+    std::string m_name{};
+};
 
 class PreferencesEditorPopup : public PanelEditorWorkspaceBase {
   public:
@@ -159,9 +174,9 @@ class PreferencesEditorPopup : public PanelEditorWorkspaceBase {
     std::string m_path{};
     bool m_unsaved = false;
 
-    std::vector<std::tuple<const std::string, fnptr_preferences_settings_menu>> m_settings;
+    std::vector<PreferencesMenuBase*> m_settings;
     size_t m_selected_index{std::string::npos};
-    std::tuple<const std::string, fnptr_preferences_settings_menu>* m_selected_menu{nullptr};
+    PreferencesMenuBase* m_selected_menu{nullptr};
 };
 
 } // namespace oge
