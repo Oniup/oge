@@ -183,23 +183,27 @@ void EditorWorkspace::_load_color_theme(ogl::YamlSerializationOption* ui_color) 
     colors[ImGuiCol_Header] =
         convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER].convert_value<glm::vec4>());
     colors[ImGuiCol_HeaderHovered] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER_HOVERED].convert_value<glm::vec4>());
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER_HOVERED].convert_value<glm::vec4>()
+        );
     colors[ImGuiCol_HeaderActive] =
         convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER_ACTIVE].convert_value<glm::vec4>());
 
     colors[ImGuiCol_Button] =
         convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON].convert_value<glm::vec4>());
     colors[ImGuiCol_ButtonHovered] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON_HOVERED].convert_value<glm::vec4>());
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON_HOVERED].convert_value<glm::vec4>()
+        );
     colors[ImGuiCol_ButtonActive] =
         convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON_ACTIVE].convert_value<glm::vec4>());
 
     colors[ImGuiCol_FrameBg] =
         convert_into_color(ui_color->scope[PREF_UI_COLOR_FRAME_BG].convert_value<glm::vec4>());
-    colors[ImGuiCol_FrameBgHovered] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_FRAME_BG_HOVERED].convert_value<glm::vec4>());
+    colors[ImGuiCol_FrameBgHovered] = convert_into_color(
+        ui_color->scope[PREF_UI_COLOR_FRAME_BG_HOVERED].convert_value<glm::vec4>()
+    );
     colors[ImGuiCol_FrameBgActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_FRAME_BG_ACTIVE].convert_value<glm::vec4>());
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_FRAME_BG_ACTIVE].convert_value<glm::vec4>()
+        );
 
     colors[ImGuiCol_Tab] =
         convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB].convert_value<glm::vec4>());
@@ -209,15 +213,18 @@ void EditorWorkspace::_load_color_theme(ogl::YamlSerializationOption* ui_color) 
         convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_ACTIVE].convert_value<glm::vec4>());
     colors[ImGuiCol_TabUnfocused] =
         convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_UNFOCUSED].convert_value<glm::vec4>());
-    colors[ImGuiCol_TabUnfocusedActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE].convert_value<glm::vec4>());
+    colors[ImGuiCol_TabUnfocusedActive] = convert_into_color(
+        ui_color->scope[PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE].convert_value<glm::vec4>()
+    );
 
     colors[ImGuiCol_TitleBg] =
         convert_into_color(ui_color->scope[PREF_UI_COLOR_TITLE_BG].convert_value<glm::vec4>());
     colors[ImGuiCol_TitleBgActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TITLE_BG_ACTIVE].convert_value<glm::vec4>());
-    colors[ImGuiCol_TitleBgCollapsed] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TITLE_BG_COLLAPSED].convert_value<glm::vec4>());
+        convert_into_color(ui_color->scope[PREF_UI_COLOR_TITLE_BG_ACTIVE].convert_value<glm::vec4>()
+        );
+    colors[ImGuiCol_TitleBgCollapsed] = convert_into_color(
+        ui_color->scope[PREF_UI_COLOR_TITLE_BG_COLLAPSED].convert_value<glm::vec4>()
+    );
 }
 
 /******************************************************************************/
@@ -253,18 +260,18 @@ void DockingEditorWorkspace::on_imgui_update() {
     ImGui::DockSpace(dock_space_id, ImVec2(0.0f, 0.0f), m_dock_node_flags);
 
     if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("file")) {
-            if (ImGui::BeginMenu("open")) {
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::BeginMenu("Open")) {
                 ImGui::EndMenu();
             }
-            if (ImGui::MenuItem("save", "CTR+S")) {
+            if (ImGui::MenuItem("Save", "CTR+S")) {
             }
 
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("view")) {
-            if (ImGui::BeginMenu("workspaces")) {
+        if (ImGui::BeginMenu("View")) {
+            if (ImGui::BeginMenu("Workspace")) {
                 const std::vector<PanelEditorWorkspaceBase*>& panels =
                     m_workspace->get_all_panels();
 
@@ -515,7 +522,22 @@ void ViewportEditorWorkspace::on_imgui_update() {
 /******************************* Pop Up Windows *******************************/
 /******************************************************************************/
 
-PreferencesEditorPopup::PreferencesEditorPopup() : PanelEditorWorkspaceBase("Preferences") {
+void preferences_layout_and_gui(const std::string& name, bool& is_unsaved) {
+    if (ImGui::Button("Select to set to unsave state")) {
+        is_unsaved = true;
+    }
+}
+
+void preferences_key_bindings(const std::string& name, bool& is_unsaved) {
+    ImGui::Text("Coming Soon ...");
+}
+
+PreferencesEditorPopup::PreferencesEditorPopup()
+    : PanelEditorWorkspaceBase("Preferences"),
+      m_settings({
+          std::make_tuple("GUI and Layout", preferences_layout_and_gui),
+          std::make_tuple("Key Bindings", preferences_key_bindings),
+      }) {
 #ifndef WIN32
     m_path = ogl::FileSystem::get_env_var("HOME") + "/.config/oge";
 #else
@@ -523,7 +545,7 @@ PreferencesEditorPopup::PreferencesEditorPopup() : PanelEditorWorkspaceBase("Pre
 #endif
 
     get_remove_when_disabled() = true;
-    m_unsaved = true;
+    m_unsaved = false;
 }
 
 void PreferencesEditorPopup::on_imgui_update() {
@@ -533,8 +555,6 @@ void PreferencesEditorPopup::on_imgui_update() {
     }
 
     ImGui::Begin(get_name().c_str(), nullptr, window_flags);
-
-    ImGui::Text("This is a test");
 
     if (m_unsaved) {
         if (ImGui::Button("Save Changes")) {
@@ -566,6 +586,44 @@ void PreferencesEditorPopup::on_imgui_update() {
         if (ImGui::Button("Close")) {
             get_enabled() = false;
         }
+    }
+
+    int child_menu_flags = ImGuiWindowFlags_NoTitleBar;
+
+    // Selecting what settings to edit
+    ImGui::BeginChild(
+        "Select", ImVec2(ImGui::GetContentRegionAvail().x * 0.15, 0), false, child_menu_flags
+    );
+    for (size_t i = 0; i < m_settings.size(); i++) {
+        int tree_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                         ImGuiTreeNodeFlags_SpanFullWidth;
+        if (i == m_selected_index) {
+            tree_flags |= ImGuiTreeNodeFlags_Selected;
+        }
+
+        ImGui::TreeNodeEx(std::get<const std::string>(m_settings[i]).c_str(), tree_flags);
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+            m_selected_index = i;
+            m_selected_menu = &m_settings[i];
+        }
+    }
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+
+    if (m_selected_menu != nullptr) {
+        ImGui::BeginChild(
+            "Selected Menu", ImVec2(ImGui::GetContentRegionAvail().x, 0), true, child_menu_flags
+        );
+        std::get<fnptr_preferences_settings_menu> (*m_selected_menu)(
+            std::get<const std::string>(*m_selected_menu), m_unsaved
+        );
+        ImGui::EndChild();
+    } else {
+        ImGui::BeginChild(
+            "Selected Menu", ImVec2(ImGui::GetContentRegionAvail().x, 0), true, child_menu_flags
+        );
+        ImGui::EndChild();
     }
 
     ImGui::End();

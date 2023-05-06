@@ -145,6 +145,8 @@ class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
 /******************************* Pop Up Windows *******************************/
 /******************************************************************************/
 
+typedef void (*fnptr_preferences_settings_menu)(const std::string&, bool&);
+
 class PreferencesEditorPopup : public PanelEditorWorkspaceBase {
   public:
     PreferencesEditorPopup();
@@ -156,6 +158,10 @@ class PreferencesEditorPopup : public PanelEditorWorkspaceBase {
     ogl::YamlSerialization conf{};
     std::string m_path{};
     bool m_unsaved = false;
+
+    std::vector<std::tuple<const std::string, fnptr_preferences_settings_menu>> m_settings;
+    size_t m_selected_index{std::string::npos};
+    std::tuple<const std::string, fnptr_preferences_settings_menu>* m_selected_menu{nullptr};
 };
 
 } // namespace oge
