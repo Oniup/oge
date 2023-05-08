@@ -4,6 +4,36 @@
 #include <ogl/ogl.hpp>
 #include <ogl/utils/yaml_serialization.hpp>
 
+#define PREF_NAME_SIZE 32
+
+#define PREF_FIELD_EDITOR_UI "editor_ui"
+#define PREF_FIELD_EDITOR_UI_COLOR "color_theme"
+
+#define PREF_EDITOR_UI_FONT_REGULAR "font_regular"
+#define PREF_EDITOR_UI_FONT_ITALIC "font_italics"
+#define PREF_EDITOR_UI_FONT_BOLD "font_bold"
+#define PREF_EDITOR_UI_FONT_BOLD_ITALIC "font_bold_italics"
+#define PREF_EDITOR_UI_FONT_MONO "font_mono"
+
+#define PREF_UI_COLOR_WINDOW_BG 0
+#define PREF_UI_COLOR_HEADER 1
+#define PREF_UI_COLOR_HEADER_HOVERED 2
+#define PREF_UI_COLOR_HEADER_ACTIVE 3
+#define PREF_UI_COLOR_BUTTON 4
+#define PREF_UI_COLOR_BUTTON_HOVERED 5
+#define PREF_UI_COLOR_BUTTON_ACTIVE 6
+#define PREF_UI_COLOR_FRAME_BG 7
+#define PREF_UI_COLOR_FRAME_BG_HOVERED 8
+#define PREF_UI_COLOR_FRAME_BG_ACTIVE 9
+#define PREF_UI_COLOR_TAB 10
+#define PREF_UI_COLOR_TAB_HOVERED 11
+#define PREF_UI_COLOR_TAB_ACTIVE 12
+#define PREF_UI_COLOR_TAB_UNFOCUSED 13
+#define PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE 14
+#define PREF_UI_COLOR_TITLE_BG 15
+#define PREF_UI_COLOR_TITLE_BG_ACTIVE 16
+#define PREF_UI_COLOR_TITLE_BG_COLLAPSED 17
+
 struct ImGuiIO;
 struct ImFont;
 
@@ -40,7 +70,8 @@ class EditorWorkspace : public ogl::ApplicationLayer {
     EditorWorkspace();
     virtual ~EditorWorkspace();
 
-    template<typename _Panel, typename... _Args> _Panel* push_panel(_Args&&... args) {
+    template<typename _Panel, typename... _Args>
+    _Panel* push_panel(_Args&&... args) {
         m_panels.push_back(new _Panel{std::forward<_Args>(args)...});
         return static_cast<_Panel*>(m_panels.back());
     }
@@ -147,11 +178,13 @@ class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
 
 class PreferencesMenuBase {
   public:
-    PreferencesMenuBase(const std::string& name, ogl::YamlSerializationOption* target_field)
-        : m_name(name), m_field(target_field) {}
+    PreferencesMenuBase(const std::string& name , const std::string* path, ogl::YamlSerializationOption* target_field)
+        : m_name(name), m_field(target_field), m_path(path) {}
     virtual ~PreferencesMenuBase() = default;
     const std::string& get_name() const { return m_name; }
     inline bool failed_to_get_field() const { return m_field == nullptr; }
+    inline const std::string& get_path() const { return *m_path; }
+
     virtual void on_imgui_draw(bool& is_unsaved) = 0;
 
   protected:
@@ -160,6 +193,7 @@ class PreferencesMenuBase {
   private:
     ogl::YamlSerializationOption* m_field{nullptr};
     std::string m_name{};
+    const std::string* m_path{nullptr};
 };
 
 class PreferencesEditorPopup : public PanelEditorWorkspaceBase {

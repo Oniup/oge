@@ -2,6 +2,7 @@
 BasedOnStyle: LLVM
 Language: Cpp
 AlignAfterOpenBracket: BlockIndent
+AlwaysBreakTemplateDeclarations: Yes
 AlignEscapedNewlines: Left
 AlignTrailingComments: true
 ColumnLimit: 100

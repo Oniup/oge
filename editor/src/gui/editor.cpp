@@ -1,4 +1,4 @@
-#include "core/editor.hpp"
+#include "gui/editor.hpp"
 
 #include <ogl/utils/filesystem.hpp>
 
@@ -6,34 +6,6 @@
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/imgui.h>
-
-#define PREF_FIELD_EDITOR_UI "editor_ui"
-#define PREF_FIELD_EDITOR_UI_COLOR "color_theme"
-
-#define PREF_EDITOR_UI_FONT_REGULAR "font_regular"
-#define PREF_EDITOR_UI_FONT_ITALIC "font_italics"
-#define PREF_EDITOR_UI_FONT_BOLD "font_bold"
-#define PREF_EDITOR_UI_FONT_BOLD_ITALIC "font_bold_italics"
-#define PREF_EDITOR_UI_FONT_MONO "font_mono"
-
-#define PREF_UI_COLOR_WINDOW_BG 0
-#define PREF_UI_COLOR_HEADER 1
-#define PREF_UI_COLOR_HEADER_HOVERED 2
-#define PREF_UI_COLOR_HEADER_ACTIVE 3
-#define PREF_UI_COLOR_BUTTON 4
-#define PREF_UI_COLOR_BUTTON_HOVERED 5
-#define PREF_UI_COLOR_BUTTON_ACTIVE 6
-#define PREF_UI_COLOR_FRAME_BG 7
-#define PREF_UI_COLOR_FRAME_BG_HOVERED 8
-#define PREF_UI_COLOR_FRAME_BG_ACTIVE 9
-#define PREF_UI_COLOR_TAB 10
-#define PREF_UI_COLOR_TAB_HOVERED 11
-#define PREF_UI_COLOR_TAB_ACTIVE 12
-#define PREF_UI_COLOR_TAB_UNFOCUSED 13
-#define PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE 14
-#define PREF_UI_COLOR_TITLE_BG 15
-#define PREF_UI_COLOR_TITLE_BG_ACTIVE 16
-#define PREF_UI_COLOR_TITLE_BG_COLLAPSED 17
 
 namespace oge {
 
@@ -92,21 +64,24 @@ EditorWorkspace::EditorWorkspace() {
 
     std::string path = settings_path + "/preferences.yaml";
     ogl::YamlSerialization preferences = ogl::YamlSerialization(path);
-    ogl::YamlSerializationOption* ui = preferences.get_option(PREF_FIELD_EDITOR_UI);
+    ogl::YamlSerializationOption* ui = preferences.get(PREF_FIELD_EDITOR_UI);
 
-    if (ui->get_option("reset_layout_on_open")->convert_value<bool>()) {
+    if (ui->get("reset_layout_on_open")->convert_value<bool>()) {
         std::remove("imgui.ini");
 
-        if (!ogl::FileSystem::copy_file(settings_path + "/layouts/default.ini", "imgui.ini")) {
+        std::string default_layout = ui->get("layout")->convert_value<std::string>();
+        if (!ogl::FileSystem::copy_file(
+                settings_path + "/layouts/" + default_layout + ".ini", "imgui.ini"
+            )) {
             ogl::Debug::log("Failed to load editor layout", ogl::DebugType_Error);
         }
     }
 
     io.FontDefault = io.Fonts->AddFontFromFileTTF(
-        ui->get_option("font_regular")->convert_value<std::string>().c_str(), 18.0f
+        ui->get(PREF_EDITOR_UI_FONT_REGULAR)->convert_value<std::string>().c_str(), 18.0f
     );
 
-    ogl::YamlSerializationOption* color_theme = ui->get_option(PREF_FIELD_EDITOR_UI_COLOR);
+    ogl::YamlSerializationOption* color_theme = ui->get(PREF_FIELD_EDITOR_UI_COLOR);
     _load_color_theme(color_theme);
 }
 
@@ -382,14 +357,16 @@ ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
     std::string settings_path = ogl::FileSystem::get_env_var("APPDATA") + "/oge/preferences.yaml";
 #endif
 
-    ogl::YamlSerialization preferences = ogl::YamlSerialization(settings_path.c_str());
-    ogl::YamlSerializationOption* ui = preferences.get_option(PREF_FIELD_EDITOR_UI);
-
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
 
+    ogl::YamlSerialization preferences = ogl::YamlSerialization(settings_path.c_str());
     m_font = io.Fonts->AddFontFromFileTTF(
-        ui->get_option("font_mono")->convert_value<std::string>().c_str(), 18.0f
+        preferences.get(PREF_FIELD_EDITOR_UI)
+            ->get(PREF_EDITOR_UI_FONT_MONO)
+            ->convert_value<std::string>()
+            .c_str(),
+        18.0f
     );
 
     m_debug = debug;
@@ -426,33 +403,67 @@ void ConsoleEditorWorkspace::on_imgui_update() {
 
     for (const std::tuple<ogl::DebugType, std::string, float>& log : m_debug->get_logs()) {
         if (std::get<bool>(m_filters[static_cast<size_t>(std::get<ogl::DebugType>(log))])) {
-            // TODO: Add the other DebugTypes
+            std::string prefix{};
             switch (std::get<ogl::DebugType>(log)) {
             case ogl::DebugType_Warning:
-                ImGui::TextColored(
-                    ImVec4(
-                        m_debug_colors[0].r, m_debug_colors[0].g, m_debug_colors[0].b,
-                        m_debug_colors[0].a
-                    ),
-                    "[Warning (%f)]: %s", std::get<float>(log), std::get<std::string>(log).c_str()
+                prefix = "[Warning (" + std::to_string(std::get<float>(log)) + ")]: ";
+                ImGui::PushStyleColor(
+                    ImGuiCol_Text, ImVec4(
+                                       m_debug_colors[0].r, m_debug_colors[0].g,
+                                       m_debug_colors[0].b, m_debug_colors[0].a
+                                   )
                 );
                 break;
+                prefix = "[Warning (" + std::to_string(std::get<float>(log)) + ")]: ";
             case ogl::DebugType_Error:
-                ImGui::TextColored(
-                    ImVec4(
-                        m_debug_colors[1].r, m_debug_colors[1].g, m_debug_colors[1].b,
-                        m_debug_colors[1].a
-                    ),
-                    "[Error (%f)]: %s", std::get<float>(log), std::get<std::string>(log).c_str()
+                prefix = "[Error (" + std::to_string(std::get<float>(log)) + ")]: ";
+                ImGui::PushStyleColor(
+                    ImGuiCol_Text, ImVec4(
+                                       m_debug_colors[1].r, m_debug_colors[1].g,
+                                       m_debug_colors[1].b, m_debug_colors[1].a
+                                   )
                 );
                 break;
             case ogl::DebugType_Message:
-                ImGui::Text(
-                    "[Message (%f)]: %s", std::get<float>(log), std::get<std::string>(log).c_str()
-                );
+                prefix = "[Message (" + std::to_string(std::get<float>(log)) + ")]: ";
                 break;
             }
+
+            ImGui::TextWrapped("%s", std::string(prefix + std::get<std::string>(log)).c_str());
+            if (std::get<ogl::DebugType>(log) != ogl::DebugType_Message) {
+                ImGui::PopStyleColor();
+            }
         }
+
+        // if (std::get<bool>(m_filters[static_cast<size_t>(std::get<ogl::DebugType>(log))])) {
+        //     switch (std::get<ogl::DebugType>(log)) {
+        //     case ogl::DebugType_Warning:
+        //         ImGui::TextColored(
+        //             ImVec4(
+        //                 m_debug_colors[0].r, m_debug_colors[0].g, m_debug_colors[0].b,
+        //                 m_debug_colors[0].a
+        //             ),
+        //             "[Warning (%f)]: %s", std::get<float>(log),
+        //             std::get<std::string>(log).c_str()
+        //         );
+        //         break;
+        //     case ogl::DebugType_Error:
+        //         ImGui::TextColored(
+        //             ImVec4(
+        //                 m_debug_colors[1].r, m_debug_colors[1].g, m_debug_colors[1].b,
+        //                 m_debug_colors[1].a
+        //             ),
+        //             "[Error (%f)]: %s", std::get<float>(log), std::get<std::string>(log).c_str()
+        //         );
+        //         break;
+        //     case ogl::DebugType_Message:
+        //         ImGui::Text(
+        //             "[Message (%f)]: %s", std::get<float>(log),
+        //             std::get<std::string>(log).c_str()
+        //         );
+        //         break;
+        //     }
+        // }
     }
 
     if (m_auto_scrolling && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
@@ -514,154 +525,6 @@ void ViewportEditorWorkspace::on_imgui_update() {
         ImGui::Text("No Framebuffer Allocated");
     }
     ImGui::EndChild();
-
-    ImGui::End();
-}
-
-/******************************************************************************/
-/******************************* Pop Up Windows *******************************/
-/******************************************************************************/
-
-/******************************** Preferences *********************************/
-
-class PreferencesLayoutAndGui : public PreferencesMenuBase {
-  public:
-    PreferencesLayoutAndGui(ogl::YamlSerializationOption* target_field)
-        : PreferencesMenuBase("GUI and Layout", target_field) {}
-
-    virtual void on_imgui_draw(bool& is_unsaved) override {
-        if (ImGui::Button("Select to set to unsave state")) {
-            is_unsaved = true;
-        }
-    }
-
-  private:
-};
-
-class PreferencesKeyBindings : public PreferencesMenuBase {
-  public:
-    PreferencesKeyBindings(ogl::YamlSerializationOption* target_field)
-        : PreferencesMenuBase("Key Bindings", target_field) {}
-
-    virtual void on_imgui_draw(bool& is_unsaved) override { ImGui::Text("Coming Soon ..."); }
-};
-
-PreferencesEditorPopup::PreferencesEditorPopup() : PanelEditorWorkspaceBase("Preferences") {
-#ifndef WIN32
-    m_path = ogl::FileSystem::get_env_var("HOME") + "/.config/oge/preferences.yaml";
-#else
-    m_path = ogl::FileSystem::get_env_var("APPDATA") + "\\oge\\preferences.yaml";
-#endif
-
-    conf = ogl::YamlSerialization(m_path);
-    if (!conf.is_null()) {
-        m_settings = {
-            new PreferencesLayoutAndGui(conf.get_option(PREF_FIELD_EDITOR_UI)),
-            new PreferencesKeyBindings(conf.get_option(PREF_FIELD_EDITOR_UI)
-            ), // TODO: Need to chang the field when finally gonna implement this functionality
-        };
-
-        // Validation
-        for (PreferencesMenuBase* menu : m_settings) {
-            if (menu->failed_to_get_field()) {
-                ogl::Debug::log(
-                    "Failed to load Preference Menu: " + menu->get_name() +
-                    ", as it could not find the options needed in preferences.yaml [" + m_path + "]"
-                );
-                get_enabled() = false;
-                break;
-            }
-        }
-    } else {
-        ogl::Debug::log(
-            "Failed to open Preferences as the preferences yaml file at [" + m_path +
-                "] doesn't exist",
-            ogl::DebugType_Error
-        );
-        get_enabled() = false;
-    }
-
-    get_remove_when_disabled() = true;
-    m_unsaved = false;
-}
-
-void PreferencesEditorPopup::on_imgui_update() {
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
-    if (m_unsaved) {
-        window_flags |= ImGuiWindowFlags_UnsavedDocument;
-    }
-
-    ImGui::Begin(get_name().c_str(), nullptr, window_flags);
-
-    if (m_unsaved) {
-        if (ImGui::Button("Save Changes")) {
-            m_unsaved = false;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Close")) {
-            ImGui::OpenPopup("Don't Save?");
-        }
-
-        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-        if (ImGui::BeginPopupModal("Don't Save?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("Sure you want to close? Will lose all unsaved changes!");
-
-            if (ImGui::Button("Ok")) {
-                get_enabled() = false;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel")) {
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::EndPopup();
-        }
-    } else {
-        if (ImGui::Button("Close")) {
-            get_enabled() = false;
-        }
-    }
-
-    int child_menu_flags = ImGuiWindowFlags_NoTitleBar;
-
-    // Selecting what settings to edit
-    ImGui::BeginChild(
-        "Select", ImVec2(ImGui::GetContentRegionAvail().x * 0.15, 0), false, child_menu_flags
-    );
-    for (size_t i = 0; i < m_settings.size(); i++) {
-        int tree_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                         ImGuiTreeNodeFlags_SpanFullWidth;
-        if (i == m_selected_index) {
-            tree_flags |= ImGuiTreeNodeFlags_Selected;
-        }
-
-        ImGui::TreeNodeEx(m_settings[i]->get_name().c_str(), tree_flags);
-        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-            m_selected_index = i;
-            m_selected_menu = m_settings[i];
-        }
-    }
-    ImGui::EndChild();
-
-    ImGui::SameLine();
-
-    if (m_selected_menu != nullptr) {
-        // Draw menu settings
-        ImGui::BeginChild(
-            "Selected Menu", ImVec2(ImGui::GetContentRegionAvail().x, 0), true, child_menu_flags
-        );
-        m_selected_menu->on_imgui_draw(m_unsaved);
-        ImGui::EndChild();
-    } else {
-        // Draw empty settings
-        ImGui::BeginChild(
-            "Selected Menu", ImVec2(ImGui::GetContentRegionAvail().x, 0), true, child_menu_flags
-        );
-        ImGui::EndChild();
-    }
 
     ImGui::End();
 }

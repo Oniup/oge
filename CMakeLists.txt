@@ -7,7 +7,7 @@ add_subdirectory(editor/thirdparty)
 # editor source
 
 add_subdirectory(editor/src)
-add_subdirectory(editor/src/core)
+add_subdirectory(editor/src/gui)
 
 add_executable(
     OGE
