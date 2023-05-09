@@ -1,10 +1,6 @@
 #include "gui/editor.hpp"
 
 #include <ogl/utils/filesystem.hpp>
-
-#include <GLFW/glfw3.h>
-#include <imgui/backends/imgui_impl_glfw.h>
-#include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/imgui.h>
 
 namespace oge {

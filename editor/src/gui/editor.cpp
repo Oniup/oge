@@ -275,7 +275,9 @@ void DockingEditorWorkspace::on_imgui_update() {
 
 void DockingEditorWorkspace::_menu_open_window(std::string_view panel_name) {}
 
-HierarchyEditorWorkspace::HierarchyEditorWorkspace() : PanelEditorWorkspaceBase("Hierarchy") {}
+HierarchyEditorWorkspace::HierarchyEditorWorkspace() : PanelEditorWorkspaceBase("Hierarchy") {
+    m_filter_tags.push_back("@oge_editor");
+}
 
 void HierarchyEditorWorkspace::on_imgui_update() {
     ImGui::Begin(get_name().c_str(), &get_enabled());
@@ -286,57 +288,46 @@ void HierarchyEditorWorkspace::on_imgui_update() {
     entt::entity entity_clicked = get_non_selected_entity_value();
     for (size_t i = 0; i < registry.size(); i++) {
         ogl::Entity entity = ogl::Entity(entities[i]);
-        ogl::NameComponent* name = entity.get_component<ogl::NameComponent>();
 
-        int flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                    ImGuiTreeNodeFlags_SpanFullWidth;
-        if (m_selected_entity == entities[i]) {
-            flags |= ImGuiTreeNodeFlags_Selected;
-        }
-        if (name != nullptr) {
-            ImGui::TreeNodeEx(
-                reinterpret_cast<void*>(static_cast<intptr_t>(entities[i])), flags, "%s (%u)",
-                name->name.c_str(), entities[i]
-            );
-        } else {
-            ImGui::TreeNodeEx(
-                reinterpret_cast<void*>(static_cast<intptr_t>(entities[i])), flags, "No Name: (%u)",
-                entities[i]
-            );
+        // PERFORMANCE: try to avoid string comparison
+        ogl::TagComponent* tag = entity.get_component<ogl::TagComponent>();
+        bool include_ent = true;
+        if (tag != nullptr) {
+            for (const std::string& filter : m_filter_tags) {
+                if (tag->get() == filter) {
+                    include_ent = false;
+                    break;
+                }
+            }
         }
 
-        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-            entity_clicked = entities[i];
+        if (include_ent) {
+            ogl::NameComponent* name = entity.get_component<ogl::NameComponent>();
+            int flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                        ImGuiTreeNodeFlags_SpanFullWidth;
+            if (m_selected_entity == entities[i]) {
+                flags |= ImGuiTreeNodeFlags_Selected;
+            }
+            if (name != nullptr) {
+                ImGui::TreeNodeEx(
+                    reinterpret_cast<void*>(static_cast<intptr_t>(entities[i])), flags, "%s (%u)",
+                    name->get(), entities[i]
+                );
+            } else {
+                ImGui::TreeNodeEx(
+                    reinterpret_cast<void*>(static_cast<intptr_t>(entities[i])), flags,
+                    "No Name: (%u)", entities[i]
+                );
+            }
+
+            if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+                entity_clicked = entities[i];
+            }
         }
     }
 
     if (entity_clicked != get_non_selected_entity_value()) {
         m_selected_entity = entity_clicked;
-    }
-
-    ImGui::End();
-}
-
-PropertiesEditorWorkspace::PropertiesEditorWorkspace(HierarchyEditorWorkspace* hierarchy)
-    : PanelEditorWorkspaceBase("Properties"), m_hierarchy(hierarchy) {}
-
-void PropertiesEditorWorkspace::on_imgui_update() {
-    ImGui::Begin(get_name().c_str(), &get_enabled());
-
-    if (m_hierarchy->get_selected_entity() != m_hierarchy->get_non_selected_entity_value()) {
-        ogl::Entity entity = ogl::Entity(m_hierarchy->get_selected_entity());
-        ogl::NameComponent* name = entity.get_component<ogl::NameComponent>();
-
-        if (name != nullptr) {
-            ImGui::Text(
-                "selected entity '%s' with the id of %u", name->name.c_str(),
-                m_hierarchy->get_selected_entity()
-            );
-        } else {
-            ImGui::Text(
-                "selected entity 'No Name' with the id of %u", m_hierarchy->get_selected_entity()
-            );
-        }
     }
 
     ImGui::End();
@@ -434,36 +425,6 @@ void ConsoleEditorWorkspace::on_imgui_update() {
                 ImGui::PopStyleColor();
             }
         }
-
-        // if (std::get<bool>(m_filters[static_cast<size_t>(std::get<ogl::DebugType>(log))])) {
-        //     switch (std::get<ogl::DebugType>(log)) {
-        //     case ogl::DebugType_Warning:
-        //         ImGui::TextColored(
-        //             ImVec4(
-        //                 m_debug_colors[0].r, m_debug_colors[0].g, m_debug_colors[0].b,
-        //                 m_debug_colors[0].a
-        //             ),
-        //             "[Warning (%f)]: %s", std::get<float>(log),
-        //             std::get<std::string>(log).c_str()
-        //         );
-        //         break;
-        //     case ogl::DebugType_Error:
-        //         ImGui::TextColored(
-        //             ImVec4(
-        //                 m_debug_colors[1].r, m_debug_colors[1].g, m_debug_colors[1].b,
-        //                 m_debug_colors[1].a
-        //             ),
-        //             "[Error (%f)]: %s", std::get<float>(log), std::get<std::string>(log).c_str()
-        //         );
-        //         break;
-        //     case ogl::DebugType_Message:
-        //         ImGui::Text(
-        //             "[Message (%f)]: %s", std::get<float>(log),
-        //             std::get<std::string>(log).c_str()
-        //         );
-        //         break;
-        //     }
-        // }
     }
 
     if (m_auto_scrolling && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {

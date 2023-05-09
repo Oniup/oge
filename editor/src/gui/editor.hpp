@@ -123,6 +123,26 @@ class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase {
   private:
     entt::entity m_selected_entity{
         static_cast<entt::entity>(std::numeric_limits<uint32_t>().max())};
+    std::vector<std::string> m_filter_tags{};
+};
+
+typedef void (*fnptr_property_imgui_draw)(ogl::Entity&);
+typedef bool (*fnptr_property_comp_exists)(ogl::Entity&);
+
+struct PropertyImGuiDraw {
+    std::string name{};
+    fnptr_property_comp_exists exists{nullptr};
+    fnptr_property_imgui_draw draw{nullptr};
+
+    PropertyImGuiDraw() = default;
+    PropertyImGuiDraw(
+        const std::string& name, fnptr_property_comp_exists exists, fnptr_property_imgui_draw draw
+    );
+    PropertyImGuiDraw(const PropertyImGuiDraw& other);
+    PropertyImGuiDraw(PropertyImGuiDraw&& other);
+
+    PropertyImGuiDraw& operator=(const PropertyImGuiDraw& other);
+    PropertyImGuiDraw& operator=(PropertyImGuiDraw&& other);
 };
 
 class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase {
@@ -130,10 +150,13 @@ class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase {
     PropertiesEditorWorkspace(HierarchyEditorWorkspace* hierarchy);
     virtual ~PropertiesEditorWorkspace() override = default;
 
+    void push_properties(const std::initializer_list<PropertyImGuiDraw> list);
+
     virtual void on_imgui_update() override;
 
   private:
     HierarchyEditorWorkspace* m_hierarchy{nullptr};
+    std::vector<PropertyImGuiDraw> m_properties{};
 };
 
 class ConsoleEditorWorkspace : public PanelEditorWorkspaceBase {
@@ -178,7 +201,9 @@ class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
 
 class PreferencesMenuBase {
   public:
-    PreferencesMenuBase(const std::string& name , const std::string* path, ogl::YamlSerializationOption* target_field)
+    PreferencesMenuBase(
+        const std::string& name, const std::string* path, ogl::YamlSerializationOption* target_field
+    )
         : m_name(name), m_field(target_field), m_path(path) {}
     virtual ~PreferencesMenuBase() = default;
     const std::string& get_name() const { return m_name; }
