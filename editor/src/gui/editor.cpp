@@ -57,7 +57,10 @@ EditorWorkspace::EditorWorkspace() {
 
         settings.set_directory(settings.get_current_path() + "/layouts");
         settings.copy_file_into_this(
-            "editor/assets/default_settings/default_layout.ini", "default.ini"
+            "editor/assets/default_settings/layout1.ini", "layout1.ini"
+        );
+        settings.copy_file_into_this(
+            "editor/assets/default_settings/layout2.ini", "layout2.ini"
         );
         settings.set_directory(settings_path);
     }
@@ -106,7 +109,7 @@ PanelEditorWorkspaceBase* EditorWorkspace::get_panel(std::string_view name) {
 }
 
 void EditorWorkspace::remove_panel(std::string_view name) {
-    for (size_t i = 0; i < m_panels.size(); i++) {
+    for (std::size_t i = 0; i < m_panels.size(); i++) {
         if (m_panels[i]->get_name() == name) {
             delete m_panels[i];
             m_panels.erase(m_panels.begin() + i);
@@ -275,9 +278,7 @@ void DockingEditorWorkspace::on_imgui_update() {
 
 void DockingEditorWorkspace::_menu_open_window(std::string_view panel_name) {}
 
-HierarchyEditorWorkspace::HierarchyEditorWorkspace() : PanelEditorWorkspaceBase("Hierarchy") {
-    m_filter_tags.push_back("@oge_editor");
-}
+HierarchyEditorWorkspace::HierarchyEditorWorkspace() : PanelEditorWorkspaceBase("Hierarchy") {}
 
 void HierarchyEditorWorkspace::on_imgui_update() {
     ImGui::Begin(get_name().c_str(), &get_enabled());
@@ -286,18 +287,15 @@ void HierarchyEditorWorkspace::on_imgui_update() {
     const entt::entity* entities = registry.data();
 
     entt::entity entity_clicked = get_non_selected_entity_value();
-    for (size_t i = 0; i < registry.size(); i++) {
+    for (std::size_t i = 0; i < registry.size(); i++) {
         ogl::Entity entity = ogl::Entity(entities[i]);
 
         // PERFORMANCE: try to avoid string comparison
         ogl::TagComponent* tag = entity.get_component<ogl::TagComponent>();
         bool include_ent = true;
         if (tag != nullptr) {
-            for (const std::string& filter : m_filter_tags) {
-                if (tag->get() == filter) {
-                    include_ent = false;
-                    break;
-                }
+            if (strncmp(tag->tag, HIERARCHY_FILTER_NAME, strlen(tag->tag)) == 0) {
+                include_ent = false;
             }
         }
 
@@ -336,7 +334,7 @@ void HierarchyEditorWorkspace::on_imgui_update() {
 ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
     : PanelEditorWorkspaceBase("Console") {
     std::string names[] = {"Messages", "Warnings", "Errors", "Fatal Errors", "Inits", "Terminate"};
-    for (size_t i = 0; i < ogl::debug_type_count; i++) {
+    for (std::size_t i = 0; i < ogl::debug_type_count; i++) {
         std::get<bool>(m_filters[i]) = true;
         std::get<std::string>(m_filters[i]) = std::move(names[i]);
     }
@@ -393,7 +391,7 @@ void ConsoleEditorWorkspace::on_imgui_update() {
     ImGui::PushFont(m_font);
 
     for (const std::tuple<ogl::DebugType, std::string, float>& log : m_debug->get_logs()) {
-        if (std::get<bool>(m_filters[static_cast<size_t>(std::get<ogl::DebugType>(log))])) {
+        if (std::get<bool>(m_filters[static_cast<std::size_t>(std::get<ogl::DebugType>(log))])) {
             std::string prefix{};
             switch (std::get<ogl::DebugType>(log)) {
             case ogl::DebugType_Warning:
@@ -440,53 +438,6 @@ AssetsEditorWorkspace::AssetsEditorWorkspace() : PanelEditorWorkspaceBase("Asset
 
 void AssetsEditorWorkspace::on_imgui_update() {
     ImGui::Begin(get_name().c_str(), &get_enabled());
-    ImGui::End();
-}
-
-ViewportEditorWorkspace::ViewportEditorWorkspace(ogl::Framebuffer* framebuffer)
-    : PanelEditorWorkspaceBase("Viewport") {
-    if (framebuffer != nullptr) {
-        m_framebuffer = framebuffer;
-    } else {
-        ogl::Debug::log("Viewport::Viewport(ogl::Framebuffer*) -> failed to create "
-                        "viewport as framebuffer is nullptr");
-    }
-}
-
-void ViewportEditorWorkspace::on_imgui_update() {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
-    ImGui::Begin(get_name().c_str(), &get_enabled(), ImGuiWindowFlags_NoScrollbar);
-    ImGui::PopStyleVar();
-    ImGui::BeginChild(1);
-
-    if (m_framebuffer != nullptr) {
-        ImVec2 window_size = ImGui::GetWindowSize();
-
-        if (window_size.x != m_framebuffer->size.x || window_size.y != m_framebuffer->size.y) {
-            m_framebuffer = ogl::Pipeline::get()->recreate_framebuffer(
-                m_framebuffer, static_cast<int>(window_size.x), static_cast<int>(window_size.y)
-            );
-            if (m_framebuffer == nullptr) {
-                ogl::Debug::log("Viewport::on_imgui_update() -> failed to resize "
-                                "framebuffer size");
-                return;
-            }
-        }
-
-        uint64_t viewport_texture_id = static_cast<uint64_t>(m_framebuffer->texture);
-        ImGui::Image(
-            reinterpret_cast<void*>(viewport_texture_id),
-            ImVec2(
-                static_cast<float>(m_framebuffer->size.x), static_cast<float>(m_framebuffer->size.y)
-            ),
-            ImVec2(1, 1), ImVec2(0, 0)
-        );
-    } else {
-        ImGui::Text("No Framebuffer Allocated");
-    }
-    ImGui::EndChild();
-
     ImGui::End();
 }
 

@@ -1,5 +1,5 @@
 editor_ui:
-  layout: 'default'
+  layout: 'layout1'
   reset_layout_on_open: true
   font_regular: 'editor/assets/fonts/mulish/Mulish-Regular.ttf'
   font_italics: 'editor/assets/fonts/mulish/Mulish-Italic.ttf'
@@ -25,4 +25,4 @@ editor_ui:
     title_bg: [0.15, 0.1505, 0.151, 1.0]
     title_bg_active: [0.15, 0.1505, 0.151, 1.0]
     title_bg_collapsed: [0.15, 0.1505, 0.151, 1.0]
-  saved_layouts: ['default']
+  saved_layouts: ['layout1','layout2']

@@ -4,6 +4,8 @@
 #include <ogl/ogl.hpp>
 #include <ogl/utils/yaml_serialization.hpp>
 
+#define HIERARCHY_FILTER_NAME "@oge_editor"
+
 #define PREF_NAME_SIZE 32
 
 #define PREF_FIELD_EDITOR_UI "editor_ui"
@@ -123,7 +125,6 @@ class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase {
   private:
     entt::entity m_selected_entity{
         static_cast<entt::entity>(std::numeric_limits<uint32_t>().max())};
-    std::vector<std::string> m_filter_tags{};
 };
 
 typedef void (*fnptr_property_imgui_draw)(ogl::Entity&);
@@ -191,8 +192,17 @@ class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
     virtual void on_imgui_update() override;
 
   private:
+    void _camera_controller();
+
     glm::ivec2 m_last_required_framebuffer_size{};
     ogl::Framebuffer* m_framebuffer{nullptr};
+
+    ogl::CameraComponent* m_camera{nullptr};
+    ogl::CameraComponent* m_scene_main_camera{nullptr};
+    float m_camera_move_speed{5.0f};
+    glm::vec2 m_camera_sensitivity{0.05f, 0.05f};
+    float m_yaw{0.0f};
+    float m_pitch{0.0f};
 };
 
 /******************************************************************************/
@@ -202,15 +212,19 @@ class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
 class PreferencesMenuBase {
   public:
     PreferencesMenuBase(
-        const std::string& name, const std::string* path, ogl::YamlSerializationOption* target_field
+        const std::string& name, const std::string* path,
+        ogl::YamlSerializationOption* target_field, class PreferencesEditorPopup* preferences
     )
-        : m_name(name), m_field(target_field), m_path(path) {}
+        : m_name(name), m_field(target_field), m_path(path), m_preferences(preferences) {}
     virtual ~PreferencesMenuBase() = default;
     const std::string& get_name() const { return m_name; }
     inline bool failed_to_get_field() const { return m_field == nullptr; }
     inline const std::string& get_path() const { return *m_path; }
+    inline class PreferencesEditorPopup* get_preferences() { return m_preferences; }
 
     virtual void on_imgui_draw(bool& is_unsaved) = 0;
+    virtual void on_save() {}
+    virtual void on_no_save() {}
 
   protected:
     ogl::YamlSerializationOption* get_field() { return m_field; }
@@ -219,6 +233,7 @@ class PreferencesMenuBase {
     ogl::YamlSerializationOption* m_field{nullptr};
     std::string m_name{};
     const std::string* m_path{nullptr};
+    class PreferencesEditorPopup* m_preferences{nullptr};
 };
 
 class PreferencesEditorPopup : public PanelEditorWorkspaceBase {
@@ -226,15 +241,17 @@ class PreferencesEditorPopup : public PanelEditorWorkspaceBase {
     PreferencesEditorPopup();
     virtual ~PreferencesEditorPopup() override = default;
 
+    inline ogl::YamlSerialization* get_config() { return &m_config; }
+
     virtual void on_imgui_update() override;
 
   private:
-    ogl::YamlSerialization conf{};
+    ogl::YamlSerialization m_config{};
     std::string m_path{};
     bool m_unsaved = false;
 
     std::vector<PreferencesMenuBase*> m_settings;
-    size_t m_selected_index{std::string::npos};
+    std::size_t m_selected_index{std::string::npos};
     PreferencesMenuBase* m_selected_menu{nullptr};
 };
 
