@@ -115,16 +115,19 @@ class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase {
     HierarchyEditorWorkspace();
     virtual ~HierarchyEditorWorkspace() override = default;
 
-    inline constexpr entt::entity get_non_selected_entity_value() const {
-        return static_cast<entt::entity>(std::numeric_limits<uint32_t>().max());
-    }
-    inline entt::entity get_selected_entity() const { return m_selected_entity; }
+    inline ecs::Entity get_selected_entity() const { return m_selected_entity; }
 
     virtual void on_imgui_update() override;
 
   private:
-    entt::entity m_selected_entity{
-        static_cast<entt::entity>(std::numeric_limits<uint32_t>().max())};
+    void _draw_entity(ogl::Entity entity, ecs::Entity& entity_clicked, bool& opened_popup);
+    void _create_shape(
+        std::string_view new_entity_name, std::string_view mesh_file_path, ogl::Entity* parent
+    );
+    void _popup_menu(ogl::Entity* entity = nullptr);
+
+    ecs::Entity m_selected_entity = {ECS_ENTITY_DESTROYED};
+    std::vector<ogl::Entity> m_deleted_entity = {};
 };
 
 typedef void (*fnptr_property_imgui_draw)(ogl::Entity&);

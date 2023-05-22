@@ -217,7 +217,7 @@ void PropertiesEditorWorkspace::push_properties(const std::initializer_list<Prop
 void PropertiesEditorWorkspace::on_imgui_update() {
     ImGui::Begin(get_name().c_str(), &get_enabled());
 
-    if (m_hierarchy->get_selected_entity() != m_hierarchy->get_non_selected_entity_value()) {
+    if (m_hierarchy->get_selected_entity() != ECS_ENTITY_DESTROYED) {
         ogl::Entity entity = ogl::Entity(m_hierarchy->get_selected_entity());
 
         ogl::NameComponent* name = entity.get_component<ogl::NameComponent>();

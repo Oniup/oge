@@ -278,59 +278,6 @@ void DockingEditorWorkspace::on_imgui_update() {
 
 void DockingEditorWorkspace::_menu_open_window(std::string_view panel_name) {}
 
-HierarchyEditorWorkspace::HierarchyEditorWorkspace() : PanelEditorWorkspaceBase("Hierarchy") {}
-
-void HierarchyEditorWorkspace::on_imgui_update() {
-    ImGui::Begin(get_name().c_str(), &get_enabled());
-
-    entt::registry& registry = ogl::SceneManager::get()->get_active_scene()->get_registry();
-    const entt::entity* entities = registry.data();
-
-    entt::entity entity_clicked = get_non_selected_entity_value();
-    for (std::size_t i = 0; i < registry.size(); i++) {
-        ogl::Entity entity = ogl::Entity(entities[i]);
-
-        // PERFORMANCE: try to avoid string comparison
-        ogl::TagComponent* tag = entity.get_component<ogl::TagComponent>();
-        bool include_ent = true;
-        if (tag != nullptr) {
-            if (strncmp(tag->tag, HIERARCHY_FILTER_NAME, strlen(tag->tag)) == 0) {
-                include_ent = false;
-            }
-        }
-
-        if (include_ent) {
-            ogl::NameComponent* name = entity.get_component<ogl::NameComponent>();
-            int flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                        ImGuiTreeNodeFlags_SpanFullWidth;
-            if (m_selected_entity == entities[i]) {
-                flags |= ImGuiTreeNodeFlags_Selected;
-            }
-            if (name != nullptr) {
-                ImGui::TreeNodeEx(
-                    reinterpret_cast<void*>(static_cast<intptr_t>(entities[i])), flags, "%s (%u)",
-                    name->get(), entities[i]
-                );
-            } else {
-                ImGui::TreeNodeEx(
-                    reinterpret_cast<void*>(static_cast<intptr_t>(entities[i])), flags,
-                    "No Name: (%u)", entities[i]
-                );
-            }
-
-            if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-                entity_clicked = entities[i];
-            }
-        }
-    }
-
-    if (entity_clicked != get_non_selected_entity_value()) {
-        m_selected_entity = entity_clicked;
-    }
-
-    ImGui::End();
-}
-
 ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
     : PanelEditorWorkspaceBase("Console") {
     std::string names[] = {"Messages", "Warnings", "Errors", "Fatal Errors", "Inits", "Terminate"};

@@ -27,13 +27,15 @@ void ViewportEditorWorkspace::on_imgui_update() {
             if (m_scene_main_camera == nullptr) {
                 ogl::Scene* scene = ogl::SceneManager::get()->get_active_scene();
                 // setting to the correct clear color
-                auto camera_view = scene->get_registry().view<ogl::CameraComponent>();
-                for (entt::entity entity : camera_view) {
-                    ogl::CameraComponent& camera = camera_view.get<ogl::CameraComponent>(entity);
+                auto view = ecs::View<ogl::CameraComponent>(&scene->get_registry());
+                for (ecs::Entity entity : view) {
+                    if (view.has_required(entity)) {
+                        ogl::CameraComponent* camera = view.get<ogl::CameraComponent>();
 
-                    if (camera.is_main) {
-                        m_scene_main_camera = &camera;
-                        break;
+                        if (camera->is_main) {
+                            m_scene_main_camera = camera;
+                            break;
+                        }
                     }
                 }
             }
@@ -77,12 +79,15 @@ void ViewportEditorWorkspace::on_imgui_update() {
             ogl::Scene* scene = ogl::SceneManager::get()->get_active_scene();
 
             if (scene != nullptr) {
-                auto view = scene->get_registry().view<ogl::CameraComponent, ogl::TagComponent>();
+                auto view =
+                    ecs::View<ogl::CameraComponent, ogl::TagComponent>(&scene->get_registry());
 
-                for (entt::entity entity : view) {
-                    ogl::TagComponent& tag = view.get<ogl::TagComponent>(entity);
-                    if (strncmp(tag.tag, HIERARCHY_FILTER_NAME, strlen(tag.tag)) == 0) {
-                        m_camera = &view.get<ogl::CameraComponent>(entity);
+                for (ecs::Entity entity : view) {
+                    if (view.has_required(entity)) {
+                        auto [camera, tag] = view.get();
+                        if (strncmp(tag->tag, HIERARCHY_FILTER_NAME, strlen(tag->tag)) == 0) {
+                            m_camera = camera;
+                        }
                     }
                 }
 
@@ -119,7 +124,8 @@ void ViewportEditorWorkspace::_camera_controller() {
         if (ogl::Input::pressed_key(ogl::InputKeyCode_LeftShift)) {
             if (ogl::Input::pressed_mousebutton(ogl::InputMouseButton_Right)) {
                 constexpr float increase_speed = 0.3f;
-                m_camera_move_speed = m_camera_move_speed + (increase_speed * ogl::Input::get_mouse_scroll_direction());
+                m_camera_move_speed = m_camera_move_speed +
+                                      (increase_speed * ogl::Input::get_mouse_scroll_direction());
                 if (m_camera_move_speed < 0.0f) {
                     m_camera_move_speed = 0.0f;
                 }
