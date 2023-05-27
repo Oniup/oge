@@ -20,9 +20,12 @@ void HierarchyEditorWorkspace::on_imgui_update() {
             ogl::TagComponent* tag = entity.get_component<ogl::TagComponent>();
             bool include_ent = true;
             if (tag != nullptr) {
-                // PERFORMANCE: try to avoid string comparison
-                if (strncmp(tag->tag, HIERARCHY_FILTER_NAME, strlen(tag->tag)) == 0) {
-                    include_ent = false;
+                std::size_t length = strlen(tag->tag);
+                if (length > 0) {
+                    // PERFORMANCE: try to avoid string comparison
+                    if (std::string(HIERARCHY_FILTER_NAME) == tag->tag) {
+                        include_ent = false;
+                    }
                 }
             }
 

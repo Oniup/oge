@@ -1,5 +1,6 @@
 #include "gui/app.hpp"
 #include "gui/editor.hpp"
+#include "gui/properties.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <ogl/renderer/renderer.hpp>
