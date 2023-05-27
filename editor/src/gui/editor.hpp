@@ -2,39 +2,11 @@
 #define __OGE_CORE_EDITOR_HPP__
 
 #include <ogl/ogl.hpp>
-#include <ogl/utils/yaml_serialization.hpp>
+#include <yaml/yaml.hpp>
 
 #define HIERARCHY_FILTER_NAME "@oge_editor"
 
 #define PREF_NAME_SIZE 32
-
-#define PREF_FIELD_EDITOR_UI "editor_ui"
-#define PREF_FIELD_EDITOR_UI_COLOR "color_theme"
-
-#define PREF_EDITOR_UI_FONT_REGULAR "font_regular"
-#define PREF_EDITOR_UI_FONT_ITALIC "font_italics"
-#define PREF_EDITOR_UI_FONT_BOLD "font_bold"
-#define PREF_EDITOR_UI_FONT_BOLD_ITALIC "font_bold_italics"
-#define PREF_EDITOR_UI_FONT_MONO "font_mono"
-
-#define PREF_UI_COLOR_WINDOW_BG 0
-#define PREF_UI_COLOR_HEADER 1
-#define PREF_UI_COLOR_HEADER_HOVERED 2
-#define PREF_UI_COLOR_HEADER_ACTIVE 3
-#define PREF_UI_COLOR_BUTTON 4
-#define PREF_UI_COLOR_BUTTON_HOVERED 5
-#define PREF_UI_COLOR_BUTTON_ACTIVE 6
-#define PREF_UI_COLOR_FRAME_BG 7
-#define PREF_UI_COLOR_FRAME_BG_HOVERED 8
-#define PREF_UI_COLOR_FRAME_BG_ACTIVE 9
-#define PREF_UI_COLOR_TAB 10
-#define PREF_UI_COLOR_TAB_HOVERED 11
-#define PREF_UI_COLOR_TAB_ACTIVE 12
-#define PREF_UI_COLOR_TAB_UNFOCUSED 13
-#define PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE 14
-#define PREF_UI_COLOR_TITLE_BG 15
-#define PREF_UI_COLOR_TITLE_BG_ACTIVE 16
-#define PREF_UI_COLOR_TITLE_BG_COLLAPSED 17
 
 struct ImGuiIO;
 struct ImFont;
@@ -61,10 +33,10 @@ class PanelEditorWorkspaceBase {
     inline ImGuiIO* get_io() { return m_io; }
 
   private:
-    std::string m_name{};
-    ImGuiIO* m_io{nullptr};
-    bool m_enabled{true};
-    bool m_remove_when_disabled{false};
+    std::string m_name = {};
+    ImGuiIO* m_io = nullptr;
+    bool m_enabled = true;
+    bool m_remove_when_disabled = false;
 };
 
 class EditorWorkspace : public ogl::ApplicationLayer {
@@ -87,7 +59,7 @@ class EditorWorkspace : public ogl::ApplicationLayer {
     virtual void on_update() override;
 
   private:
-    void _load_color_theme(ogl::YamlSerializationOption* ui_color);
+    void _load_color_theme(yaml::Node& color);
     std::vector<PanelEditorWorkspaceBase*> m_panels{};
 };
 
@@ -105,9 +77,9 @@ class DockingEditorWorkspace : public PanelEditorWorkspaceBase {
   private:
     void _menu_open_window(std::string_view panel_name);
 
-    class EditorWorkspace* m_workspace{nullptr};
-    int m_dock_node_flags{};
-    int m_window_flags{};
+    class EditorWorkspace* m_workspace = nullptr;
+    int m_dock_node_flags = 0;
+    int m_window_flags = 0;
 };
 
 class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase {
@@ -126,7 +98,7 @@ class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase {
     );
     void _popup_menu(ogl::Entity* entity = nullptr);
 
-    ecs::Entity m_selected_entity = {ECS_ENTITY_DESTROYED};
+    ecs::Entity m_selected_entity = ECS_ENTITY_DESTROYED;
     std::vector<ogl::Entity> m_deleted_entity = {};
 };
 
@@ -159,8 +131,8 @@ class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase {
     virtual void on_imgui_update() override;
 
   private:
-    HierarchyEditorWorkspace* m_hierarchy{nullptr};
-    std::vector<PropertyImGuiDraw> m_properties{};
+    HierarchyEditorWorkspace* m_hierarchy = nullptr;
+    std::vector<PropertyImGuiDraw> m_properties = {};
 };
 
 class ConsoleEditorWorkspace : public PanelEditorWorkspaceBase {
@@ -171,12 +143,12 @@ class ConsoleEditorWorkspace : public PanelEditorWorkspaceBase {
     virtual void on_imgui_update() override;
 
   private:
-    glm::vec4 m_debug_colors[2]{
+    glm::vec4 m_debug_colors[2] = {
         glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)};
-    std::tuple<bool, std::string> m_filters[ogl::debug_type_count];
-    bool m_auto_scrolling{true};
-    ogl::Debug* m_debug{nullptr};
-    ImFont* m_font{nullptr};
+    std::tuple<bool, std::string> m_filters[ogl::debug_type_count] = {};
+    bool m_auto_scrolling = true;
+    ogl::Debug* m_debug = nullptr;
+    ImFont* m_font = nullptr;
 };
 
 class AssetsEditorWorkspace : public PanelEditorWorkspaceBase {
@@ -197,66 +169,65 @@ class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
   private:
     void _camera_controller();
 
-    glm::ivec2 m_last_required_framebuffer_size{};
-    ogl::Framebuffer* m_framebuffer{nullptr};
+    glm::ivec2 m_last_required_framebuffer_size = {};
+    ogl::Framebuffer* m_framebuffer = nullptr;
 
-    ogl::CameraComponent* m_camera{nullptr};
-    ogl::CameraComponent* m_scene_main_camera{nullptr};
-    float m_camera_move_speed{5.0f};
-    glm::vec2 m_camera_sensitivity{0.05f, 0.05f};
-    float m_yaw{0.0f};
-    float m_pitch{0.0f};
+    ogl::CameraComponent* m_camera = nullptr;
+    ogl::CameraComponent* m_scene_main_camera = nullptr;
+    float m_camera_move_speed = 5.0f;
+    glm::vec2 m_camera_sensitivity = {0.05f, 0.05f};
+    float m_yaw = 0.0f;
+    float m_pitch = 0.0f;
 };
 
 /******************************************************************************/
 /******************************* Pop Up Windows *******************************/
 /******************************************************************************/
 
-class PreferencesMenuBase {
-  public:
-    PreferencesMenuBase(
-        const std::string& name, const std::string* path,
-        ogl::YamlSerializationOption* target_field, class PreferencesEditorPopup* preferences
-    )
-        : m_name(name), m_field(target_field), m_path(path), m_preferences(preferences) {}
-    virtual ~PreferencesMenuBase() = default;
-    const std::string& get_name() const { return m_name; }
-    inline bool failed_to_get_field() const { return m_field == nullptr; }
-    inline const std::string& get_path() const { return *m_path; }
-    inline class PreferencesEditorPopup* get_preferences() { return m_preferences; }
-
-    virtual void on_imgui_draw(bool& is_unsaved) = 0;
-    virtual void on_save() {}
-    virtual void on_no_save() {}
-
-  protected:
-    ogl::YamlSerializationOption* get_field() { return m_field; }
-
-  private:
-    ogl::YamlSerializationOption* m_field{nullptr};
-    std::string m_name{};
-    const std::string* m_path{nullptr};
-    class PreferencesEditorPopup* m_preferences{nullptr};
-};
-
-class PreferencesEditorPopup : public PanelEditorWorkspaceBase {
-  public:
-    PreferencesEditorPopup();
-    virtual ~PreferencesEditorPopup() override = default;
-
-    inline ogl::YamlSerialization* get_config() { return &m_config; }
-
-    virtual void on_imgui_update() override;
-
-  private:
-    ogl::YamlSerialization m_config{};
-    std::string m_path{};
-    bool m_unsaved = false;
-
-    std::vector<PreferencesMenuBase*> m_settings;
-    std::size_t m_selected_index{std::string::npos};
-    PreferencesMenuBase* m_selected_menu{nullptr};
-};
+// class PreferencesMenuBase {
+//   public:
+//     PreferencesMenuBase(
+//         const std::string& name, const std::string* path, yaml::Node& node,
+//         class PreferencesEditorPopup* preferences
+//     )
+//         : m_name(name), m_node(node), m_path(path), m_preferences(preferences) {}
+//     virtual ~PreferencesMenuBase() = default;
+//     const std::string& get_name() const { return m_name; }
+//     inline const std::string& get_path() const { return *m_path; }
+//     inline class PreferencesEditorPopup* get_preferences() { return m_preferences; }
+//
+//     virtual void on_imgui_draw(bool& is_unsaved) = 0;
+//     virtual void on_save() {}
+//     virtual void on_no_save() {}
+//
+//   protected:
+//     yaml::Node& get_field() { return m_node; }
+//
+//   private:
+//     yaml::Node& m_node;
+//     std::string m_name = {};
+//     const std::string* m_path = nullptr;
+//     class PreferencesEditorPopup* m_preferences = nullptr;
+// };
+//
+// class PreferencesEditorPopup : public PanelEditorWorkspaceBase {
+//   public:
+//     PreferencesEditorPopup();
+//     virtual ~PreferencesEditorPopup() override = default;
+//
+//     inline yaml::Node& get_config() { return m_root; }
+//
+//     virtual void on_imgui_update() override;
+//
+//   private:
+//     yaml::Node m_root = {};
+//     std::string m_path = {};
+//     bool m_unsaved = false;
+//
+//     std::vector<PreferencesMenuBase*> m_settings = {};
+//     std::size_t m_selected_index = std::string::npos;
+//     PreferencesMenuBase* m_selected_menu = nullptr;
+// };
 
 } // namespace oge
 

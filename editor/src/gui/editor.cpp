@@ -1,4 +1,5 @@
 #include "gui/editor.hpp"
+#include "utils/yaml_types.hpp"
 
 #include <ogl/utils/filesystem.hpp>
 
@@ -8,8 +9,6 @@
 #include <imgui/imgui.h>
 
 namespace oge {
-
-ImVec4 convert_into_color(const glm::vec4& vec) { return ImVec4{vec.x, vec.y, vec.z, vec.w}; }
 
 enum ConsoleFileReadingStage {
     ConsoleFileReadingStage_Type,
@@ -53,26 +52,25 @@ EditorWorkspace::EditorWorkspace() {
     if (!settings.dir_exists()) {
         settings = ogl::FileSystemAt(settings_path, true);
         settings.copy_file_into_this("editor/assets/default_settings/preferences.yaml");
+        settings.copy_file_into_this(
+            "editor/assets/default_settings/preferences.yaml", "default_preferences.yaml"
+        );
         settings.create_dir("layouts");
 
         settings.set_directory(settings.get_current_path() + "/layouts");
-        settings.copy_file_into_this(
-            "editor/assets/default_settings/layout1.ini", "layout1.ini"
-        );
-        settings.copy_file_into_this(
-            "editor/assets/default_settings/layout2.ini", "layout2.ini"
-        );
+        settings.copy_file_into_this("editor/assets/default_settings/layout1.ini", "layout1.ini");
+        settings.copy_file_into_this("editor/assets/default_settings/layout2.ini", "layout2.ini");
         settings.set_directory(settings_path);
     }
 
     std::string path = settings_path + "/preferences.yaml";
-    ogl::YamlSerialization preferences = ogl::YamlSerialization(path);
-    ogl::YamlSerializationOption* ui = preferences.get(PREF_FIELD_EDITOR_UI);
+    yaml::Node preferences = yaml::Node::open(path);
+    yaml::Node& ui = preferences["EditorUI"];
 
-    if (ui->get("reset_layout_on_open")->convert_value<bool>()) {
+    if (yaml::Convert<bool>().value(ui["ResetLayoutOnLoad"])) {
         std::remove("imgui.ini");
 
-        std::string default_layout = ui->get("layout")->convert_value<std::string>();
+        std::string default_layout = yaml::Convert<std::string>().value(ui["Layout"]);
         if (!ogl::FileSystem::copy_file(
                 settings_path + "/layouts/" + default_layout + ".ini", "imgui.ini"
             )) {
@@ -81,11 +79,10 @@ EditorWorkspace::EditorWorkspace() {
     }
 
     io.FontDefault = io.Fonts->AddFontFromFileTTF(
-        ui->get(PREF_EDITOR_UI_FONT_REGULAR)->convert_value<std::string>().c_str(), 18.0f
+        yaml::Convert<std::string>().value(ui["FontRegular"]).c_str(), 18.0f
     );
 
-    ogl::YamlSerializationOption* color_theme = ui->get(PREF_FIELD_EDITOR_UI_COLOR);
-    _load_color_theme(color_theme);
+    _load_color_theme(ui["ColorTheme"]);
 }
 
 EditorWorkspace::~EditorWorkspace() {
@@ -152,57 +149,31 @@ void EditorWorkspace::on_update() {
     }
 }
 
-void EditorWorkspace::_load_color_theme(ogl::YamlSerializationOption* ui_color) {
+void EditorWorkspace::_load_color_theme(yaml::Node& ui_color) {
     auto& colors = ImGui::GetStyle().Colors;
 
-    colors[ImGuiCol_WindowBg] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_WINDOW_BG].convert_value<glm::vec4>());
+    ImVec4 col = yaml::Convert<ImVec4>().value(ui_color["WindowBg"]);
+    colors[ImGuiCol_WindowBg] = col;
 
-    colors[ImGuiCol_Header] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER].convert_value<glm::vec4>());
-    colors[ImGuiCol_HeaderHovered] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER_HOVERED].convert_value<glm::vec4>()
-        );
-    colors[ImGuiCol_HeaderActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER_ACTIVE].convert_value<glm::vec4>());
-
-    colors[ImGuiCol_Button] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON].convert_value<glm::vec4>());
-    colors[ImGuiCol_ButtonHovered] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON_HOVERED].convert_value<glm::vec4>()
-        );
-    colors[ImGuiCol_ButtonActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON_ACTIVE].convert_value<glm::vec4>());
-
-    colors[ImGuiCol_FrameBg] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_FRAME_BG].convert_value<glm::vec4>());
-    colors[ImGuiCol_FrameBgHovered] = convert_into_color(
-        ui_color->scope[PREF_UI_COLOR_FRAME_BG_HOVERED].convert_value<glm::vec4>()
-    );
-    colors[ImGuiCol_FrameBgActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_FRAME_BG_ACTIVE].convert_value<glm::vec4>()
-        );
-
-    colors[ImGuiCol_Tab] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB].convert_value<glm::vec4>());
-    colors[ImGuiCol_TabHovered] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_HOVERED].convert_value<glm::vec4>());
-    colors[ImGuiCol_TabActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_ACTIVE].convert_value<glm::vec4>());
-    colors[ImGuiCol_TabUnfocused] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_UNFOCUSED].convert_value<glm::vec4>());
-    colors[ImGuiCol_TabUnfocusedActive] = convert_into_color(
-        ui_color->scope[PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE].convert_value<glm::vec4>()
-    );
-
-    colors[ImGuiCol_TitleBg] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TITLE_BG].convert_value<glm::vec4>());
-    colors[ImGuiCol_TitleBgActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TITLE_BG_ACTIVE].convert_value<glm::vec4>()
-        );
-    colors[ImGuiCol_TitleBgCollapsed] = convert_into_color(
-        ui_color->scope[PREF_UI_COLOR_TITLE_BG_COLLAPSED].convert_value<glm::vec4>()
-    );
+    colors[ImGuiCol_WindowBg] = yaml::Convert<ImVec4>().value(ui_color["WindowBg"]);
+    colors[ImGuiCol_Header] = yaml::Convert<ImVec4>().value(ui_color["Header"]);
+    colors[ImGuiCol_HeaderHovered] = yaml::Convert<ImVec4>().value(ui_color["HeaderHovered"]);
+    colors[ImGuiCol_HeaderActive] = yaml::Convert<ImVec4>().value(ui_color["HeaderActive"]);
+    colors[ImGuiCol_Button] = yaml::Convert<ImVec4>().value(ui_color["Button"]);
+    colors[ImGuiCol_ButtonHovered] = yaml::Convert<ImVec4>().value(ui_color["ButtonHovered"]);
+    colors[ImGuiCol_ButtonActive] = yaml::Convert<ImVec4>().value(ui_color["ButtonActive"]);
+    colors[ImGuiCol_FrameBg] = yaml::Convert<ImVec4>().value(ui_color["FrameBg"]);
+    colors[ImGuiCol_FrameBgHovered] = yaml::Convert<ImVec4>().value(ui_color["FrameBgHovered"]);
+    colors[ImGuiCol_FrameBgActive] = yaml::Convert<ImVec4>().value(ui_color["FrameBgActive"]);
+    colors[ImGuiCol_Tab] = yaml::Convert<ImVec4>().value(ui_color["Tab"]);
+    colors[ImGuiCol_TabHovered] = yaml::Convert<ImVec4>().value(ui_color["TabHovered"]);
+    colors[ImGuiCol_TabActive] = yaml::Convert<ImVec4>().value(ui_color["TabActive"]);
+    colors[ImGuiCol_TabUnfocused] = yaml::Convert<ImVec4>().value(ui_color["TabUnfocused"]);
+    colors[ImGuiCol_TabUnfocusedActive] =
+        yaml::Convert<ImVec4>().value(ui_color["TabUnfocusedActive"]);
+    colors[ImGuiCol_TitleBg] = yaml::Convert<ImVec4>().value(ui_color["TitleBg"]);
+    colors[ImGuiCol_TitleBgActive] = yaml::Convert<ImVec4>().value(ui_color["TitleBgActive"]);
+    colors[ImGuiCol_TitleBgCollapsed] = yaml::Convert<ImVec4>().value(ui_color["TitleBgCollapsed"]);
 }
 
 /******************************************************************************/
@@ -264,7 +235,10 @@ void DockingEditorWorkspace::on_imgui_update() {
 
             if (ImGui::MenuItem("Preferences")) {
                 if (m_workspace->get_panel("Preferences") == nullptr) {
-                    m_workspace->push_panel<PreferencesEditorPopup>();
+                    ogl::Debug::log(
+                        "Preference settings are coming soon ...", ogl::DebugType_Warning
+                    );
+                    // m_workspace->push_panel<PreferencesEditorPopup>();
                 }
             }
 
@@ -296,12 +270,9 @@ ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
 
-    ogl::YamlSerialization preferences = ogl::YamlSerialization(settings_path.c_str());
+    yaml::Node preferences = yaml::Node::open(settings_path);
     m_font = io.Fonts->AddFontFromFileTTF(
-        preferences.get(PREF_FIELD_EDITOR_UI)
-            ->get(PREF_EDITOR_UI_FONT_MONO)
-            ->convert_value<std::string>()
-            .c_str(),
+        yaml::Convert<std::string>().value(preferences["EditorUI"].get_child("FontMono")).c_str(),
         18.0f
     );
 

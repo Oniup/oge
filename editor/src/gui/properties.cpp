@@ -114,9 +114,6 @@ void property_draw_imgui_light(ogl::Entity& entity) {
     }
 
     ImGui::Spacing();
-    if (light->type != ogl::LightType_Directional) {
-        ImGui::DragFloat3("Position", &light->position[0], VectorSliderMoveSpeed);
-    }
     if (light->type != ogl::LightType_Point) {
         ImGui::DragFloat3("Direction", &light->direction[0], VectorSliderMoveSpeed);
     }
@@ -129,18 +126,51 @@ void property_draw_imgui_light(ogl::Entity& entity) {
 
 void property_draw_imgui_mesh_renderer(ogl::Entity& entity) {
     ogl::MeshRendererComponent* mesh_renderer = entity.get_component<ogl::MeshRendererComponent>();
+    constexpr std::size_t change_path_buffer_size = 1028;
+    static char change_path_buffer[change_path_buffer_size] = {};
 
-    ImGui::Checkbox("Is Static", &mesh_renderer->is_static);
+    bool is_static = mesh_renderer->is_static;
+    ImGui::Checkbox("Is Static", &is_static);
     ImGui::Checkbox("Uses Lights", &mesh_renderer->uses_lights);
     ImGui::Checkbox("Cast Shadows", &mesh_renderer->cast_shadows);
 
     if (mesh_renderer->model != nullptr) {
         ogl::Model* model = mesh_renderer->model;
         ImGui::Spacing();
-        ImGui::TextWrapped("Name: %s, Full Path: %s", model->name.c_str(), model->path.c_str());
+        ImGui::TextWrapped("Mesh: %s", mesh_renderer->model->name.c_str());
+
+        if (ImGui::Button(mesh_renderer->model->path.c_str())) {
+            ImGui::OpenPopup("Set Mesh Path");
+            strncpy(
+                change_path_buffer, mesh_renderer->model->path.c_str(),
+                mesh_renderer->model->path.size()
+            );
+            change_path_buffer[mesh_renderer->model->path.size()] = '\0';
+        }
     } else {
         ImGui::Spacing();
-        ImGui::Text("No Mesh Selected ...");
+        if (ImGui::Button("Set Mesh")) {
+            ImGui::OpenPopup("Set Mesh Path");
+            change_path_buffer[0] = '\0';
+        }
+    }
+
+    if (ImGui::BeginPopup("Set Mesh Path")) {
+        ImGui::InputText("Path", change_path_buffer, change_path_buffer_size);
+        if (ImGui::Button("Set")) {
+            ogl::Model* model = ogl::AssetHandler::get()->load_model_into_memory(
+                change_path_buffer, ogl::ModelFileType_Obj
+            );
+            if (!mesh_renderer->is_static) {
+                delete mesh_renderer->model;
+            }
+            mesh_renderer->model = model;
+        }
+        ImGui::EndPopup();
+    }
+
+    if (is_static != mesh_renderer->is_static) {
+        ogl::Debug::log("static meshes aren't implemented yet", ogl::DebugType_Warning);
     }
 }
 

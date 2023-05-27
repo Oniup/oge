@@ -8,12 +8,14 @@ add_subdirectory(editor/thirdparty)
 
 add_subdirectory(editor/src)
 add_subdirectory(editor/src/gui)
+add_subdirectory(editor/src/utils)
 
 add_executable(
     OGE
 
     ${EDITOR_ROOT_SOURCES}
     ${EDITOR_CORE_SOURCES}
+    ${EDITOR_UTILS_SOURCES}
 )
 
 target_link_libraries(
@@ -45,9 +47,8 @@ set_target_properties(
 )
 
 target_compile_definitions(
-    OGE PUBLIC 
-
-    _CRT_NONSTDC_NO_WARNINGS
+    OGE 
+    PUBLIC _CRT_NONSTDC_NO_WARNINGS
 )
 
 add_custom_command(

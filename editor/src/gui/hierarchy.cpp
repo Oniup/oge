@@ -16,18 +16,19 @@ void HierarchyEditorWorkspace::on_imgui_update() {
     bool opened_targeted_entity_popup = false;
     for (std::size_t i = 0; i < entities.size(); i++) {
         ogl::Entity entity = ogl::Entity(entities[i]);
-
-        ogl::TagComponent* tag = entity.get_component<ogl::TagComponent>();
-        bool include_ent = true;
-        if (tag != nullptr) {
-            // PERFORMANCE: try to avoid string comparison
-            if (strncmp(tag->tag, HIERARCHY_FILTER_NAME, strlen(tag->tag)) == 0) {
-                include_ent = false;
+        if (entity) {
+            ogl::TagComponent* tag = entity.get_component<ogl::TagComponent>();
+            bool include_ent = true;
+            if (tag != nullptr) {
+                // PERFORMANCE: try to avoid string comparison
+                if (strncmp(tag->tag, HIERARCHY_FILTER_NAME, strlen(tag->tag)) == 0) {
+                    include_ent = false;
+                }
             }
-        }
 
-        if (include_ent) {
-            _draw_entity(entity, entity_clicked, opened_targeted_entity_popup);
+            if (include_ent) {
+                _draw_entity(entity, entity_clicked, opened_targeted_entity_popup);
+            }
         }
     }
 
