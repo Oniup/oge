@@ -1,3 +1,4 @@
+#include "core/project.hpp"
 #include "gui/editor.hpp"
 
 #include <imgui/imgui.h>
@@ -33,10 +34,13 @@ void DockingEditorWorkspace::on_imgui_update() {
     ImGui::DockSpace(dock_space_id, ImVec2(0.0f, 0.0f), m_dock_node_flags);
     bool scene_loaded = ogl::SceneManager::get()->get_active_scene() != nullptr;
 
+    bool open_project_popup = false;
+
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::BeginMenu("New")) {
                 if (ImGui::MenuItem("Project")) {
+                    open_project_popup = true;
                 }
 
                 if (ImGui::MenuItem("Scene")) {
@@ -87,6 +91,11 @@ void DockingEditorWorkspace::on_imgui_update() {
         }
         ImGui::EndMenuBar();
     }
+
+    if (open_project_popup) {
+        ImGui::OpenPopup("Create Project");
+    }
+    Project::create_new_popup();
 
     ImGui::End();
 }

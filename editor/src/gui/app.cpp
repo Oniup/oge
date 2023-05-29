@@ -1,15 +1,21 @@
 #include "gui/app.hpp"
+#include "core/project.hpp"
 #include "gui/editor.hpp"
 #include "gui/properties.hpp"
-#include "core/project.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <ogl/renderer/renderer.hpp>
 #include <ogl/utils/filesystem.hpp>
+#include <portable-file-dialogs/portable-file-dialogs.h>
 
 namespace oge {
 
 App::App() {
+    assert(
+        pfd::settings::available() && "Portable File Dialogs are not available for this platform, "
+                                      "therefore cannot run this program, sorry"
+    );
+
     ogl::Pipeline::get()->get_window()->set_title("Oniup's Game Editor - empty*");
     ogl::Pipeline::get()->get_window()->set_size(ogl::WindowResolution_Maximize);
     static_cast<ogl::BasicRenderer*>(ogl::Pipeline::get()->push_renderer(new ogl::BasicRenderer()))

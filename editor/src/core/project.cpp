@@ -1,10 +1,79 @@
 #include "core/project.hpp"
+#include "utils/utils.hpp"
 
+#include <imgui/imgui.h>
+#include <portable-file-dialogs/portable-file-dialogs.h>
 #include <yaml/yaml.hpp>
 
 namespace oge {
 
 Project* Project::m_Instance = nullptr;
+
+void Project::create_new_popup() {
+    if (ImGui::BeginPopupModal("Create Project", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImVec2 window_size = ImVec2(
+            static_cast<float>(ogl::Pipeline::get()->get_window()->get_width()) * 0.2f,
+            static_cast<float>(ogl::Pipeline::get()->get_window()->get_height()) * 0.2f
+        );
+
+        ImGui::BeginChild("Create Project Correct Size", window_size);
+        {
+            static char project_name[yaml::Node::max_name_size()];
+            static char folder_location[yaml::Node::max_line_size()];
+            static bool is_3d_based = true;
+
+            ImGui::BeginChild("Setting Names", ImVec2(window_size.x * 0.3f, 0.0f));
+            {
+                ImGui::Text("Name");
+                ImGui::Text("Directory");
+                ImGui::Text("Is 3D Based");
+            }
+            ImGui::EndChild();
+            ImGui::SameLine();
+
+            ImGui::BeginChild("Setting");
+            {
+                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+                ImGui::InputText("###Name", project_name, yaml::Node::max_line_size());
+                ImGui::PopItemWidth();
+
+                ImGui::PushItemWidth(
+                    ImGui::GetContentRegionAvail().x -
+                    (ImGui::CalcTextSize("...").x + ImGui::GetStyle().FramePadding.x +
+                     ImGui::GetStyle().WindowPadding.x + ImGui::GetStyle().ItemInnerSpacing.x)
+                );
+                ImGui::InputText("###Directory", folder_location, yaml::Node::max_line_size());
+                ImGui::PopItemWidth();
+                ImGui::SameLine();
+
+                if (ImGui::Button("...")) {
+                    const std::string& directory =
+                        pfd::select_folder("New Project Location", pfd::path::home()).result();
+                    strncpy(folder_location, directory.c_str(), directory.size());
+                }
+
+                ImGui::Checkbox("###3DBased", &is_3d_based);
+
+                ImGui::SetCursorPosY(window_size.y - ImGuiHelper::calc_button_size().y);
+                if (ImGui::Button(
+                        "Create", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0.0f)
+                    )) {
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::SameLine();
+
+                if (ImGui::Button("Cancel", ImVec2(ImGui::GetContentRegionAvail().x, 0.0f))) {
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            ImGui::EndChild();
+        }
+        ImGui::EndChild();
+
+        ImGui::EndPopup();
+    }
+}
 
 Project::Project() {
     assert(

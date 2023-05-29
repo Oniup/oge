@@ -1,12 +1,13 @@
 #include "gui/editor.hpp"
 #include "utils/yaml_types.hpp"
-
-#include <ogl/utils/filesystem.hpp>
+#include "utils/utils.hpp"
 
 #include <GLFW/glfw3.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/imgui.h>
+#include <ogl/utils/filesystem.hpp>
+#include <portable-file-dialogs/portable-file-dialogs.h>
 
 namespace oge {
 
@@ -41,13 +42,7 @@ EditorWorkspace::EditorWorkspace() {
 
     // Settings Preferences
 
-    // FIX: Make sure this works on windows
-#ifndef WIN32
-    std::string settings_path = ogl::FileSystem::get_env_var("HOME") + "/.config/oge";
-#else
-    std::string settings_path = ogl::FileSystem::get_env_var("APPDATA") + "/oge";
-#endif
-
+    std::string settings_path = pfd::path::home() + "/.config/oge";
     ogl::FileSystemAt settings = ogl::FileSystemAt(settings_path);
     if (!settings.dir_exists()) {
         settings = ogl::FileSystemAt(settings_path, true);
@@ -187,13 +182,7 @@ ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
         std::get<std::string>(m_filters[i]) = std::move(names[i]);
     }
 
-#ifndef WIN32
-    std::string settings_path =
-        ogl::FileSystem::get_env_var("HOME") + "/.config/oge/preferences.yaml";
-#else
-    std::string settings_path = ogl::FileSystem::get_env_var("APPDATA") + "/oge/preferences.yaml";
-#endif
-
+    std::string settings_path = pfd::path::home() + "/.config/oge/preferences.yaml";
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
 

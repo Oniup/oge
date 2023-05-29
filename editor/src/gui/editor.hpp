@@ -60,6 +60,8 @@ class EditorWorkspace : public ogl::ApplicationLayer {
 
   private:
     void _load_color_theme(yaml::Node& color);
+
+  private:
     std::vector<PanelEditorWorkspaceBase*> m_panels{};
 };
 
@@ -135,6 +137,7 @@ class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
 
   private:
     void _camera_controller(ogl::CameraComponent* camera);
+    void _no_project();
 
     glm::ivec2 m_last_required_framebuffer_size = {};
     ogl::Framebuffer* m_framebuffer = nullptr;

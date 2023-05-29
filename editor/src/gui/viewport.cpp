@@ -1,7 +1,10 @@
 #include "core/project.hpp"
 #include "gui/editor.hpp"
+#include "utils/utils.hpp"
 
 #include <imgui/imgui.h>
+#include <imgui/imgui_internal.h>
+#include <portable-file-dialogs/portable-file-dialogs.h>
 
 namespace oge {
 
@@ -38,26 +41,30 @@ void ViewportEditorWorkspace::on_imgui_update() {
             }
         } else {
             ImVec2 window_size = ImGui::GetWindowSize();
-            ImVec2 text_size = ImGui::CalcTextSize("Create Empty Scene");
-            ImGui::SetCursorPosX((window_size.x - text_size.x) * 0.5f);
-            ImGui::SetCursorPosY((window_size.y - text_size.y) * 0.5f);
 
-            // if (Project::get()->opened()) {
-            if (ImGui::Button("Create Empty Scene")) {
-                ogl::SceneManager::get()->set_active(ogl::SceneManager::get()->push("Empty Scene"));
+            if (Project::get()->opened()) {
+                ImVec2 text_size = ImGui::CalcTextSize("Create Empty Scene");
+                ImGui::SetCursorPosX((window_size.x - text_size.x) * 0.5f);
+                ImGui::SetCursorPosY((window_size.y - text_size.y) * 0.5f);
 
-                // Create Editor Camera for new scene
-                ogl::Entity entity = ogl::Entity(true);
-                entity.add_component<ogl::TagComponent>(HIERARCHY_FILTER_NAME);
+                if (ImGui::Button("Create Empty Scene")) {
+                    ogl::SceneManager::get()->set_active(
+                        ogl::SceneManager::get()->push("Empty Scene")
+                    );
 
-                editor_camera = entity.add_component<ogl::CameraComponent>();
-                editor_camera->clear_color = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-                editor_camera->is_main = true;
-                // TODO: Set to Orthographic if in 2D mode
-                editor_camera->projection_type = ogl::CameraProjection_Perspective;
+                    // Create Editor Camera for new scene
+                    ogl::Entity entity = ogl::Entity(true);
+                    entity.add_component<ogl::TagComponent>(HIERARCHY_FILTER_NAME);
+
+                    editor_camera = entity.add_component<ogl::CameraComponent>();
+                    editor_camera->clear_color = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
+                    editor_camera->is_main = true;
+                    // TODO: Set to Orthographic if in 2D mode
+                    editor_camera->projection_type = ogl::CameraProjection_Perspective;
+                }
+            } else {
+                _no_project();
             }
-            // } else {
-            // }
         }
 
         if (editor_camera != nullptr) {
@@ -161,6 +168,57 @@ void ViewportEditorWorkspace::_camera_controller(ogl::CameraComponent* camera) {
     }
 
     last_mouse_position = mouse_position;
+}
+
+void ViewportEditorWorkspace::_no_project() {
+    ImVec2 available_space = ImGui::GetContentRegionAvail();
+    ImVec2 child_window_size = ImVec2(available_space.x * 0.5f, available_space.y * 0.5f);
+    ImGui::SetCursorPosX((available_space.x - child_window_size.x) * 0.5f);
+    ImGui::SetCursorPosY((available_space.y - child_window_size.y) * 0.5f);
+
+    ImGui::BeginChild("No Project Enabled", child_window_size, true);
+    {
+        ImGui::BeginChild("No Project Enabled -> Edit", ImVec2(child_window_size.x * 0.5f, 0.0f));
+        {
+            float button_width = ImGui::GetContentRegionAvail().x;
+            float button_height = ImGuiHelper::calc_button_size().y;
+
+            // Calc button offset so it is centered
+            ImGui::SetCursorPosY((child_window_size.y - button_height * 3.0f) * 0.5f);
+
+            if (ImGui::Button("Create New Project", ImVec2(button_width, 0.0f))) {
+                ImGui::OpenPopup("Create Project");
+            }
+
+            Project::create_new_popup();
+
+            if (ImGui::Button("Open Project", ImVec2(button_width, 0.0f))) {
+                const std::string directory =
+                    pfd::select_folder("New project directory", pfd::path::home()).result();
+                ogl::Debug::log("Open project directory: " + directory);
+            }
+        }
+        ImGui::EndChild();
+
+        ImGui::SameLine();
+
+        ImGui::BeginChild("No Project Enabled -> Recently Opened", ImVec2(0.0f, 0.0f));
+        {
+            float text_width = ImGui::CalcTextSize("Recent Projects").x;
+            ImGui::SetCursorPosX((child_window_size.x * 0.5f - text_width) * 0.5f);
+            ImGui::Text("Recent Projects");
+
+            ImGui::BeginChild(
+                "No Project Enabled -> Recently Opened List", ImVec2(0.0f, 0.0f), true
+            );
+            {
+                // TODO: have a list of projects recently opened saved in preferences
+            }
+            ImGui::EndChild();
+        }
+        ImGui::EndChild();
+    }
+    ImGui::EndChild();
 }
 
 } // namespace oge
