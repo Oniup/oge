@@ -134,67 +134,16 @@ class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
     virtual void on_imgui_update() override;
 
   private:
-    void _camera_controller();
+    void _camera_controller(ogl::CameraComponent* camera);
 
     glm::ivec2 m_last_required_framebuffer_size = {};
     ogl::Framebuffer* m_framebuffer = nullptr;
 
-    ogl::CameraComponent* m_camera = nullptr;
-    ogl::CameraComponent* m_scene_main_camera = nullptr;
     float m_camera_move_speed = 5.0f;
     glm::vec2 m_camera_sensitivity = {0.05f, 0.05f};
     float m_yaw = 0.0f;
     float m_pitch = 0.0f;
 };
-
-/******************************************************************************/
-/******************************* Pop Up Windows *******************************/
-/******************************************************************************/
-
-// class PreferencesMenuBase {
-//   public:
-//     PreferencesMenuBase(
-//         const std::string& name, const std::string* path, yaml::Node& node,
-//         class PreferencesEditorPopup* preferences
-//     )
-//         : m_name(name), m_node(node), m_path(path), m_preferences(preferences) {}
-//     virtual ~PreferencesMenuBase() = default;
-//     const std::string& get_name() const { return m_name; }
-//     inline const std::string& get_path() const { return *m_path; }
-//     inline class PreferencesEditorPopup* get_preferences() { return m_preferences; }
-//
-//     virtual void on_imgui_draw(bool& is_unsaved) = 0;
-//     virtual void on_save() {}
-//     virtual void on_no_save() {}
-//
-//   protected:
-//     yaml::Node& get_field() { return m_node; }
-//
-//   private:
-//     yaml::Node& m_node;
-//     std::string m_name = {};
-//     const std::string* m_path = nullptr;
-//     class PreferencesEditorPopup* m_preferences = nullptr;
-// };
-//
-// class PreferencesEditorPopup : public PanelEditorWorkspaceBase {
-//   public:
-//     PreferencesEditorPopup();
-//     virtual ~PreferencesEditorPopup() override = default;
-//
-//     inline yaml::Node& get_config() { return m_root; }
-//
-//     virtual void on_imgui_update() override;
-//
-//   private:
-//     yaml::Node m_root = {};
-//     std::string m_path = {};
-//     bool m_unsaved = false;
-//
-//     std::vector<PreferencesMenuBase*> m_settings = {};
-//     std::size_t m_selected_index = std::string::npos;
-//     PreferencesMenuBase* m_selected_menu = nullptr;
-// };
 
 } // namespace oge
 

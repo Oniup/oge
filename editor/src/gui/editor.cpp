@@ -64,7 +64,7 @@ EditorWorkspace::EditorWorkspace() {
     }
 
     std::string path = settings_path + "/preferences.yaml";
-    yaml::Node preferences = yaml::Node::open(path);
+    yaml::Node preferences = yaml::open(path);
     yaml::Node& ui = preferences["EditorUI"];
 
     if (yaml::Convert<bool>().value(ui["ResetLayoutOnLoad"])) {
@@ -78,9 +78,8 @@ EditorWorkspace::EditorWorkspace() {
         }
     }
 
-    io.FontDefault = io.Fonts->AddFontFromFileTTF(
-        yaml::Convert<std::string>().value(ui["FontRegular"]).c_str(), 18.0f
-    );
+    std::string font = yaml::Convert<std::string>().value(ui["FontRegular"]).c_str();
+    io.FontDefault = io.Fonts->AddFontFromFileTTF(font.c_str(), 18.0f);
 
     _load_color_theme(ui["ColorTheme"]);
 }
@@ -180,78 +179,6 @@ void EditorWorkspace::_load_color_theme(yaml::Node& ui_color) {
 /******************************** Base Windows ********************************/
 /******************************************************************************/
 
-DockingEditorWorkspace::DockingEditorWorkspace(EditorWorkspace* workspace)
-    : PanelEditorWorkspaceBase("Docking") {
-    m_dock_node_flags = ImGuiDockNodeFlags_None;
-
-    m_window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
-                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                     ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-    m_workspace = workspace;
-    get_enabled() = true;
-}
-
-void DockingEditorWorkspace::on_imgui_update() {
-    const ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
-    ImGui::SetNextWindowViewport(viewport->ID);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin(get_name().c_str(), &get_enabled(), m_window_flags);
-    ImGui::PopStyleVar(3);
-
-    ImGuiID dock_space_id = ImGui::GetID("DockSpace");
-    ImGui::DockSpace(dock_space_id, ImVec2(0.0f, 0.0f), m_dock_node_flags);
-
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-            if (ImGui::BeginMenu("Open")) {
-                ImGui::EndMenu();
-            }
-            if (ImGui::MenuItem("Save", "CTR+S")) {
-            }
-
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("View")) {
-            if (ImGui::BeginMenu("Workspace")) {
-                const std::vector<PanelEditorWorkspaceBase*>& panels =
-                    m_workspace->get_all_panels();
-
-                for (PanelEditorWorkspaceBase* panel : panels) {
-                    if (panel->get_name() != get_name()) {
-                        ImGui::MenuItem(panel->get_name().c_str(), nullptr, &panel->get_enabled());
-                    }
-                }
-
-                ImGui::EndMenu();
-            }
-
-            if (ImGui::MenuItem("Preferences")) {
-                if (m_workspace->get_panel("Preferences") == nullptr) {
-                    ogl::Debug::log(
-                        "Preference settings are coming soon ...", ogl::DebugType_Warning
-                    );
-                    // m_workspace->push_panel<PreferencesEditorPopup>();
-                }
-            }
-
-            ImGui::EndMenu();
-        }
-        ImGui::EndMenuBar();
-    }
-
-    ImGui::End();
-}
-
-void DockingEditorWorkspace::_menu_open_window(std::string_view panel_name) {}
-
 ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
     : PanelEditorWorkspaceBase("Console") {
     std::string names[] = {"Messages", "Warnings", "Errors", "Fatal Errors", "Inits", "Terminate"};
@@ -270,7 +197,7 @@ ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
 
-    yaml::Node preferences = yaml::Node::open(settings_path);
+    yaml::Node preferences = yaml::open(settings_path);
     m_font = io.Fonts->AddFontFromFileTTF(
         yaml::Convert<std::string>().value(preferences["EditorUI"].get_child("FontMono")).c_str(),
         18.0f

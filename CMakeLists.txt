@@ -9,12 +9,14 @@ add_subdirectory(editor/thirdparty)
 add_subdirectory(editor/src)
 add_subdirectory(editor/src/gui)
 add_subdirectory(editor/src/utils)
+add_subdirectory(editor/src/core)
 
 add_executable(
     OGE
 
     ${EDITOR_ROOT_SOURCES}
     ${EDITOR_CORE_SOURCES}
+    ${EDITOR_GUI_SOURCES}
     ${EDITOR_UTILS_SOURCES}
 )
 

@@ -30,8 +30,8 @@ class CameraPropertyDefinition : public PropertyTypeDefinition<ogl::CameraCompon
         ImGui::Spacing();
 
         ImGui::DragFloat3("Position", &camera->position[0], VectorSliderMoveSpeed);
-        ImGui::DragFloat3("Up Vector", &camera->up[0], VectorSliderMoveSpeed);
-        ImGui::DragFloat3("Forward Vector", &camera->forward[0], VectorSliderMoveSpeed);
+        ImGui::DragFloat3("Up", &camera->up[0], VectorSliderMoveSpeed);
+        ImGui::DragFloat3("Forward", &camera->forward[0], VectorSliderMoveSpeed);
 
         ImGui::Spacing();
 
@@ -42,13 +42,13 @@ class CameraPropertyDefinition : public PropertyTypeDefinition<ogl::CameraCompon
         std::string project_type_selectable = "Projection Type: ";
         switch (camera->projection_type) {
         case ogl::CameraProjection_None:
-            project_type_selectable += "ogl::CameraProjection_None";
+            project_type_selectable += "None";
             break;
         case ogl::CameraProjection_Perspective:
-            project_type_selectable += "ogl::CameraProjection_Perspective";
+            project_type_selectable += "Perspective";
             break;
         case ogl::CameraProjection_Orthographic:
-            project_type_selectable += "ogl::CameraProjection_Orthographic";
+            project_type_selectable += "Orthographic";
             break;
         }
 
@@ -78,13 +78,13 @@ class LightPropertyDefinition : public PropertyTypeDefinition<ogl::LightComponen
         char type_name[32]{};
         switch (light->type) {
         case ogl::LightType_Point:
-            strcpy(type_name, "ogl::LightType_Point\0");
+            strcpy(type_name, "Type: Point\0");
             break;
         case ogl::LightType_Directional:
-            strcpy(type_name, "ogl::LightType_Directional\0");
+            strcpy(type_name, "Type: Directional\0");
             break;
         case ogl::LightType_Spot:
-            strcpy(type_name, "ogl::LightType_Spot\0");
+            strcpy(type_name, "Type: Spot\0");
             break;
         }
 
@@ -92,13 +92,13 @@ class LightPropertyDefinition : public PropertyTypeDefinition<ogl::LightComponen
             ImGui::OpenPopup("Select Light Type");
         }
         if (ImGui::BeginPopup("Select Light Type")) {
-            if (ImGui::Selectable("ogl::LightType_Point")) {
+            if (ImGui::Selectable("Point")) {
                 light->type = ogl::LightType_Point;
             }
-            if (ImGui::Selectable("ogl::LightType_Directional")) {
+            if (ImGui::Selectable("Direction")) {
                 light->type = ogl::LightType_Directional;
             }
-            if (ImGui::Selectable("ogl::LightType_Spot")) {
+            if (ImGui::Selectable("Spot")) {
                 light->type = ogl::LightType_Spot;
             }
             ImGui::EndPopup();

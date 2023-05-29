@@ -1,3 +1,4 @@
+#include "core/project.hpp"
 #include "gui/editor.hpp"
 
 #include <imgui/imgui.h>
@@ -17,31 +18,50 @@ ViewportEditorWorkspace::ViewportEditorWorkspace(ogl::Framebuffer* framebuffer)
 void ViewportEditorWorkspace::on_imgui_update() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-    _camera_controller();
-
     ImGui::Begin(get_name().c_str(), &get_enabled(), ImGuiWindowFlags_NoScrollbar);
     {
         ImGui::PopStyleVar();
 
-        if (m_camera != nullptr) {
-            if (m_scene_main_camera == nullptr) {
-                ogl::Scene* scene = ogl::SceneManager::get()->get_active_scene();
-                // setting to the correct clear color
-                auto view = ecs::View<ogl::CameraComponent>(&scene->get_registry());
-                for (ecs::Entity entity : view) {
-                    if (view.has_required(entity)) {
-                        ogl::CameraComponent* camera = view.get<ogl::CameraComponent>();
+        ogl::Scene* scene = ogl::SceneManager::get()->get_active_scene();
+        ogl::CameraComponent* editor_camera = nullptr;
 
-                        if (camera->is_main) {
-                            m_scene_main_camera = camera;
-                            break;
-                        }
+        if (scene != nullptr) {
+            auto view = ecs::View<ogl::CameraComponent, ogl::TagComponent>(&scene->get_registry());
+            for (ecs::Entity entity : view) {
+                if (view.has_required(entity)) {
+                    auto [camera, tag] = view.get();
+                    if (std::string(tag->tag) == HIERARCHY_FILTER_NAME) {
+                        editor_camera = camera;
+                        break;
                     }
                 }
             }
+        } else {
+            ImVec2 window_size = ImGui::GetWindowSize();
+            ImVec2 text_size = ImGui::CalcTextSize("Create Empty Scene");
+            ImGui::SetCursorPosX((window_size.x - text_size.x) * 0.5f);
+            ImGui::SetCursorPosY((window_size.y - text_size.y) * 0.5f);
 
-            m_camera->clear_color = m_scene_main_camera->clear_color;
+            // if (Project::get()->opened()) {
+            if (ImGui::Button("Create Empty Scene")) {
+                ogl::SceneManager::get()->set_active(ogl::SceneManager::get()->push("Empty Scene"));
 
+                // Create Editor Camera for new scene
+                ogl::Entity entity = ogl::Entity(true);
+                entity.add_component<ogl::TagComponent>(HIERARCHY_FILTER_NAME);
+
+                editor_camera = entity.add_component<ogl::CameraComponent>();
+                editor_camera->clear_color = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
+                editor_camera->is_main = true;
+                // TODO: Set to Orthographic if in 2D mode
+                editor_camera->projection_type = ogl::CameraProjection_Perspective;
+            }
+            // } else {
+            // }
+        }
+
+        if (editor_camera != nullptr) {
+            _camera_controller(editor_camera);
             ImGui::BeginChild(1);
             {
                 if (m_framebuffer != nullptr) {
@@ -74,53 +94,17 @@ void ViewportEditorWorkspace::on_imgui_update() {
                 }
             }
             ImGui::EndChild();
-
-        } else {
-            ogl::Scene* scene = ogl::SceneManager::get()->get_active_scene();
-
-            if (scene != nullptr) {
-                auto view =
-                    ecs::View<ogl::CameraComponent, ogl::TagComponent>(&scene->get_registry());
-
-                for (ecs::Entity entity : view) {
-                    if (view.has_required(entity)) {
-                        auto [camera, tag] = view.get();
-                        if (strncmp(tag->tag, HIERARCHY_FILTER_NAME, strlen(tag->tag)) == 0) {
-                            m_camera = camera;
-                        }
-                    }
-                }
-
-                if (m_camera == nullptr) {
-                    ogl::Entity editor_camera{true};
-                    ogl::CameraComponent* camera_comp =
-                        editor_camera.add_component<ogl::CameraComponent>();
-                    editor_camera.add_component<ogl::TagComponent>(HIERARCHY_FILTER_NAME);
-                    camera_comp->clear_color = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-                    camera_comp->is_main = true;
-                    // TODO: Set to Orthographic if in 2D mode
-                    camera_comp->projection_type = ogl::CameraProjection_Perspective;
-                }
-            } else {
-                ImVec2 spacing = ImGui::GetContentRegionAvail();
-                spacing = ImVec2(spacing.x / 2, spacing.y / 2);
-                if (ImGui::Button("Create Empty Scene")) {
-                    ogl::Debug::log(
-                        "Create New Empty Scene, [This is will implemented when working on "
-                        "project functionality]"
-                    );
-                }
-            }
         }
     }
+
     ImGui::End();
 }
 
-void ViewportEditorWorkspace::_camera_controller() {
+void ViewportEditorWorkspace::_camera_controller(ogl::CameraComponent* camera) {
     glm::vec2 mouse_position = ogl::Input::get_mouse_position();
     static glm::vec2 last_mouse_position = mouse_position;
 
-    if (m_camera != nullptr) {
+    if (camera != nullptr) {
         if (ogl::Input::pressed_key(ogl::InputKeyCode_LeftShift)) {
             if (ogl::Input::pressed_mousebutton(ogl::InputMouseButton_Right)) {
                 constexpr float increase_speed = 0.3f;
@@ -131,33 +115,33 @@ void ViewportEditorWorkspace::_camera_controller() {
                 }
 
                 if (ogl::Input::pressed_key(ogl::InputKeyCode_S)) {
-                    m_camera->position -=
-                        m_camera_move_speed * m_camera->forward * ogl::Time::get_delta();
+                    camera->position -=
+                        m_camera_move_speed * camera->forward * ogl::Time::get_delta();
                 }
 
                 if (ogl::Input::pressed_key(ogl::InputKeyCode_W)) {
-                    m_camera->position +=
-                        m_camera_move_speed * m_camera->forward * ogl::Time::get_delta();
+                    camera->position +=
+                        m_camera_move_speed * camera->forward * ogl::Time::get_delta();
                 }
 
                 if (ogl::Input::pressed_key(ogl::InputKeyCode_D)) {
-                    m_camera->position -= m_camera_move_speed *
-                                          glm::cross(m_camera->forward, m_camera->up) *
-                                          ogl::Time::get_delta();
+                    camera->position -= m_camera_move_speed *
+                                        glm::cross(camera->forward, camera->up) *
+                                        ogl::Time::get_delta();
                 }
 
                 if (ogl::Input::pressed_key(ogl::InputKeyCode_A)) {
-                    m_camera->position += m_camera_move_speed *
-                                          glm::cross(m_camera->forward, m_camera->up) *
-                                          ogl::Time::get_delta();
+                    camera->position += m_camera_move_speed *
+                                        glm::cross(camera->forward, camera->up) *
+                                        ogl::Time::get_delta();
                 }
 
                 if (ogl::Input::pressed_key(ogl::InputKeyCode_Q)) {
-                    m_camera->position.y -= m_camera_move_speed * ogl::Time::get_delta();
+                    camera->position.y -= m_camera_move_speed * ogl::Time::get_delta();
                 }
 
                 if (ogl::Input::pressed_key(ogl::InputKeyCode_E)) {
-                    m_camera->position.y += m_camera_move_speed * ogl::Time::get_delta();
+                    camera->position.y += m_camera_move_speed * ogl::Time::get_delta();
                 }
                 glm::vec2 mouse_movement = last_mouse_position - mouse_position;
 
@@ -167,7 +151,7 @@ void ViewportEditorWorkspace::_camera_controller() {
                 m_pitch += mouse_movement.y;
                 m_pitch = std::clamp(m_pitch, -89.0f, 90.0f);
 
-                m_camera->forward = glm::vec3(
+                camera->forward = glm::vec3(
                     glm::cos(glm::radians(m_yaw)) * glm::cos(glm::radians(m_pitch)),
                     glm::sin(glm::radians(m_pitch)),
                     glm::sin(glm::radians(m_yaw)) * glm::cos(glm::radians(m_pitch))

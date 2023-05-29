@@ -9,44 +9,47 @@ HierarchyEditorWorkspace::HierarchyEditorWorkspace() : PanelEditorWorkspaceBase(
 void HierarchyEditorWorkspace::on_imgui_update() {
     ImGui::Begin(get_name().c_str(), &get_enabled());
 
-    ecs::Registry& registry = ogl::SceneManager::get()->get_active_scene()->get_registry();
-    const std::vector<ecs::Entity>& entities = registry.get_entities();
+    ogl::Scene* active_scene = ogl::SceneManager::get()->get_active_scene();
+    if (active_scene != nullptr) {
+        ecs::Registry& registry = active_scene->get_registry();
+        const std::vector<ecs::Entity>& entities = registry.get_entities();
 
-    ecs::Entity entity_clicked = ECS_ENTITY_DESTROYED;
-    bool opened_targeted_entity_popup = false;
-    for (std::size_t i = 0; i < entities.size(); i++) {
-        ogl::Entity entity = ogl::Entity(entities[i]);
-        if (entity) {
-            ogl::TagComponent* tag = entity.get_component<ogl::TagComponent>();
-            bool include_ent = true;
-            if (tag != nullptr) {
-                std::size_t length = strlen(tag->tag);
-                if (length > 0) {
-                    // PERFORMANCE: try to avoid string comparison
-                    if (std::string(HIERARCHY_FILTER_NAME) == tag->tag) {
-                        include_ent = false;
+        ecs::Entity entity_clicked = ECS_ENTITY_DESTROYED;
+        bool opened_targeted_entity_popup = false;
+        for (std::size_t i = 0; i < entities.size(); i++) {
+            ogl::Entity entity = ogl::Entity(entities[i]);
+            if (entity) {
+                ogl::TagComponent* tag = entity.get_component<ogl::TagComponent>();
+                bool include_ent = true;
+                if (tag != nullptr) {
+                    std::size_t length = strlen(tag->tag);
+                    if (length > 0) {
+                        // PERFORMANCE: try to avoid string comparison
+                        if (std::string(HIERARCHY_FILTER_NAME) == tag->tag) {
+                            include_ent = false;
+                        }
                     }
                 }
-            }
 
-            if (include_ent) {
-                _draw_entity(entity, entity_clicked, opened_targeted_entity_popup);
+                if (include_ent) {
+                    _draw_entity(entity, entity_clicked, opened_targeted_entity_popup);
+                }
             }
         }
-    }
 
-    if (entity_clicked != ECS_ENTITY_DESTROYED) {
-        m_selected_entity = entity_clicked;
-    }
+        if (entity_clicked != ECS_ENTITY_DESTROYED) {
+            m_selected_entity = entity_clicked;
+        }
 
-    if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) {
-        m_selected_entity = ECS_ENTITY_DESTROYED;
-    }
+        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) {
+            m_selected_entity = ECS_ENTITY_DESTROYED;
+        }
 
-    if (!opened_targeted_entity_popup) {
-        if (ImGui::BeginPopupContextWindow()) {
-            _popup_menu();
-            ImGui::EndPopup();
+        if (!opened_targeted_entity_popup) {
+            if (ImGui::BeginPopupContextWindow()) {
+                _popup_menu();
+                ImGui::EndPopup();
+            }
         }
     }
 
