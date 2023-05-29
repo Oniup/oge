@@ -5,3 +5,6 @@
 	path = editor/thirdparty/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "editor/thirdparty/portable-file-dialogs"]
+	path = editor/thirdparty/portable-file-dialogs
+	url = https://github.com/samhocevar/portable-file-dialogs.git
