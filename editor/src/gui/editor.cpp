@@ -1,12 +1,13 @@
 #include "gui/editor.hpp"
-#include "utils/yaml_types.hpp"
 #include "utils/utils.hpp"
+#include "utils/yaml_types.hpp"
+
+#include <filesystem>
 
 #include <GLFW/glfw3.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/imgui.h>
-#include <ogl/utils/filesystem.hpp>
 #include <portable-file-dialogs/portable-file-dialogs.h>
 
 namespace oge {
@@ -43,38 +44,46 @@ EditorWorkspace::EditorWorkspace() {
     // Settings Preferences
 
     std::string settings_path = pfd::path::home() + "/.config/oge";
-    ogl::FileSystemAt settings = ogl::FileSystemAt(settings_path);
-    if (!settings.dir_exists()) {
-        settings = ogl::FileSystemAt(settings_path, true);
-        settings.copy_file_into_this("editor/assets/default_settings/preferences.yaml");
-        settings.copy_file_into_this(
-            "editor/assets/default_settings/preferences.yaml", "default_preferences.yaml"
-        );
-        settings.create_dir("layouts");
+    if (!std::filesystem::exists(settings_path)) {
+        std::filesystem::create_directory(settings_path);
 
-        settings.set_directory(settings.get_current_path() + "/layouts");
-        settings.copy_file_into_this("editor/assets/default_settings/layout1.ini", "layout1.ini");
-        settings.copy_file_into_this("editor/assets/default_settings/layout2.ini", "layout2.ini");
-        settings.set_directory(settings_path);
+        // Create preference config file and its default for backup
+        std::filesystem::copy_file(
+            "editor/assets/default_settings/preferences.yaml", settings_path + "/preferences.yaml"
+        );
+        std::filesystem::copy_file(
+            "editor/assets/default_settings/preferences.yaml",
+            settings_path + "/default_preferences.yaml"
+        );
+
+        // Pushing the 2 default layouts
+        std::string layouts_path = settings_path + "/layouts";
+        std::filesystem::create_directory(layouts_path);
+        std::filesystem::copy_file(
+            "editor/assets/default_settings/layout1.ini", layouts_path + "/layout1.ini"
+        );
+        std::filesystem::copy_file(
+            "editor/assets/default_settings/layout2.ini", layouts_path + "/layout2.ini"
+        );
     }
 
     std::string path = settings_path + "/preferences.yaml";
     yaml::Node preferences = yaml::open(path);
     yaml::Node& ui = preferences["EditorUI"];
 
-    if (yaml::Convert<bool>().value(ui["ResetLayoutOnLoad"])) {
+    if (ui["ResetLayoutOnLoad"].as<bool>()) {
         std::remove("imgui.ini");
 
-        std::string default_layout = yaml::Convert<std::string>().value(ui["Layout"]);
-        if (!ogl::FileSystem::copy_file(
+        std::string default_layout = ui["Layout"].as<std::string>();
+        if (!std::filesystem::copy_file(
                 settings_path + "/layouts/" + default_layout + ".ini", "imgui.ini"
             )) {
             ogl::Debug::log("Failed to load editor layout", ogl::DebugType_Error);
         }
     }
 
-    std::string font = yaml::Convert<std::string>().value(ui["FontRegular"]).c_str();
-    io.FontDefault = io.Fonts->AddFontFromFileTTF(font.c_str(), 18.0f);
+    io.FontDefault =
+        io.Fonts->AddFontFromFileTTF(ui["FontRegular"].as<std::string>().c_str(), 18.0f);
 
     _load_color_theme(ui["ColorTheme"]);
 }
@@ -146,28 +155,24 @@ void EditorWorkspace::on_update() {
 void EditorWorkspace::_load_color_theme(yaml::Node& ui_color) {
     auto& colors = ImGui::GetStyle().Colors;
 
-    ImVec4 col = yaml::Convert<ImVec4>().value(ui_color["WindowBg"]);
-    colors[ImGuiCol_WindowBg] = col;
-
-    colors[ImGuiCol_WindowBg] = yaml::Convert<ImVec4>().value(ui_color["WindowBg"]);
-    colors[ImGuiCol_Header] = yaml::Convert<ImVec4>().value(ui_color["Header"]);
-    colors[ImGuiCol_HeaderHovered] = yaml::Convert<ImVec4>().value(ui_color["HeaderHovered"]);
-    colors[ImGuiCol_HeaderActive] = yaml::Convert<ImVec4>().value(ui_color["HeaderActive"]);
-    colors[ImGuiCol_Button] = yaml::Convert<ImVec4>().value(ui_color["Button"]);
-    colors[ImGuiCol_ButtonHovered] = yaml::Convert<ImVec4>().value(ui_color["ButtonHovered"]);
-    colors[ImGuiCol_ButtonActive] = yaml::Convert<ImVec4>().value(ui_color["ButtonActive"]);
-    colors[ImGuiCol_FrameBg] = yaml::Convert<ImVec4>().value(ui_color["FrameBg"]);
-    colors[ImGuiCol_FrameBgHovered] = yaml::Convert<ImVec4>().value(ui_color["FrameBgHovered"]);
-    colors[ImGuiCol_FrameBgActive] = yaml::Convert<ImVec4>().value(ui_color["FrameBgActive"]);
-    colors[ImGuiCol_Tab] = yaml::Convert<ImVec4>().value(ui_color["Tab"]);
-    colors[ImGuiCol_TabHovered] = yaml::Convert<ImVec4>().value(ui_color["TabHovered"]);
-    colors[ImGuiCol_TabActive] = yaml::Convert<ImVec4>().value(ui_color["TabActive"]);
-    colors[ImGuiCol_TabUnfocused] = yaml::Convert<ImVec4>().value(ui_color["TabUnfocused"]);
-    colors[ImGuiCol_TabUnfocusedActive] =
-        yaml::Convert<ImVec4>().value(ui_color["TabUnfocusedActive"]);
-    colors[ImGuiCol_TitleBg] = yaml::Convert<ImVec4>().value(ui_color["TitleBg"]);
-    colors[ImGuiCol_TitleBgActive] = yaml::Convert<ImVec4>().value(ui_color["TitleBgActive"]);
-    colors[ImGuiCol_TitleBgCollapsed] = yaml::Convert<ImVec4>().value(ui_color["TitleBgCollapsed"]);
+    colors[ImGuiCol_WindowBg] = ui_color["WindowBg"].as<ImVec4>();
+    colors[ImGuiCol_Header] = ui_color["Header"].as<ImVec4>();
+    colors[ImGuiCol_HeaderHovered] = ui_color["HeaderHovered"].as<ImVec4>();
+    colors[ImGuiCol_HeaderActive] = ui_color["HeaderActive"].as<ImVec4>();
+    colors[ImGuiCol_Button] = ui_color["Button"].as<ImVec4>();
+    colors[ImGuiCol_ButtonHovered] = ui_color["ButtonHovered"].as<ImVec4>();
+    colors[ImGuiCol_ButtonActive] = ui_color["ButtonActive"].as<ImVec4>();
+    colors[ImGuiCol_FrameBg] = ui_color["FrameBg"].as<ImVec4>();
+    colors[ImGuiCol_FrameBgHovered] = ui_color["FrameBgHovered"].as<ImVec4>();
+    colors[ImGuiCol_FrameBgActive] = ui_color["FrameBgActive"].as<ImVec4>();
+    colors[ImGuiCol_Tab] = ui_color["Tab"].as<ImVec4>();
+    colors[ImGuiCol_TabHovered] = ui_color["TabHovered"].as<ImVec4>();
+    colors[ImGuiCol_TabActive] = ui_color["TabActive"].as<ImVec4>();
+    colors[ImGuiCol_TabUnfocused] = ui_color["TabUnfocused"].as<ImVec4>();
+    colors[ImGuiCol_TabUnfocusedActive] = ui_color["TabUnfocusedActive"].as<ImVec4>();
+    colors[ImGuiCol_TitleBg] = ui_color["TitleBg"].as<ImVec4>();
+    colors[ImGuiCol_TitleBgActive] = ui_color["TitleBgActive"].as<ImVec4>();
+    colors[ImGuiCol_TitleBgCollapsed] = ui_color["TitleBgCollapsed"].as<ImVec4>();
 }
 
 /******************************************************************************/
@@ -188,8 +193,7 @@ ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
 
     yaml::Node preferences = yaml::open(settings_path);
     m_font = io.Fonts->AddFontFromFileTTF(
-        yaml::Convert<std::string>().value(preferences["EditorUI"].get_child("FontMono")).c_str(),
-        18.0f
+        preferences["EditorUI"].get_child("FontMono").as<std::string>().c_str(), 18.0f
     );
 
     m_debug = debug;

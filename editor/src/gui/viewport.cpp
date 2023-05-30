@@ -193,9 +193,15 @@ void ViewportEditorWorkspace::_no_project() {
             Project::create_new_popup();
 
             if (ImGui::Button("Open Project", ImVec2(button_width, 0.0f))) {
-                const std::string directory =
-                    pfd::select_folder("New project directory", pfd::path::home()).result();
-                ogl::Debug::log("Open project directory: " + directory);
+                std::vector<std::string> files =
+                    pfd::open_file(
+                        "Open Project", pfd::path::home(),
+                        {"Oniups Game Engine Project File (.oproject)", "*.oproject"}
+                    )
+                        .result();
+                if (files.size() > 0) {
+                    Project::get()->load(files[0]);
+                }
             }
         }
         ImGui::EndChild();

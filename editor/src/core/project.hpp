@@ -21,7 +21,7 @@ class Project : public ogl::ApplicationLayer {
     inline const std::string& get_root_path() const { return m_root_path; }
     inline const std::string& get_project_filename() const { return m_project_filename; }
 
-    bool create(const std::string& name, const std::string& project_root_path);
+    bool create(const std::string& name, const std::string& project_root_path, bool is_3d_based);
     bool load(const std::string& project_filename);
     void serialize(const std::string& path);
 
