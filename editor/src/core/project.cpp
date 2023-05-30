@@ -164,15 +164,21 @@ bool Project::create(
 
 bool Project::load(const std::string& project_filename) {
     yaml::Node root = yaml::open(project_filename);
-    m_name = root["ProjectName"].as<std::string>();
-    m_project_filename = project_filename;
-    m_root_path = std::string(project_filename.c_str(), project_filename.find_last_of('/'));
+    if (!root.empty()) {
+        m_name = root["ProjectName"].as<std::string>();
+        m_project_filename = project_filename;
+        m_root_path = std::string(project_filename.c_str(), project_filename.find_last_of('/'));
 
-    if (root["SceneCount"].as<std::size_t>() > 0) {
-        // TODO: load scenes
+        ogl::Pipeline::get()->get_window()->set_title("Oniups Game Editor - " + m_name);
+
+        if (root["SceneCount"].as<std::size_t>() > 0) {
+            // TODO: load scenes
+        }
+
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 void Project::serialize(const std::string& path) {}

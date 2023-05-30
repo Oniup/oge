@@ -2,6 +2,7 @@
 #include "gui/editor.hpp"
 
 #include <imgui/imgui.h>
+#include <portable-file-dialogs/portable-file-dialogs.h>
 
 namespace oge {
 
@@ -50,6 +51,15 @@ void DockingEditorWorkspace::on_imgui_update() {
             }
 
             if (ImGui::MenuItem("Open", "Ctrl+O")) {
+                std::vector<std::string> files =
+                    pfd::open_file(
+                        "Open Project", pfd::path::home(),
+                        {"Oniups Game Engine Project File (.oproject)", "*.oproject"}
+                    )
+                        .result();
+                if (files.size() > 0) {
+                    Project::get()->load(files[0]);
+                }
             }
 
             if (ImGui::BeginMenu("Open Recents")) {
