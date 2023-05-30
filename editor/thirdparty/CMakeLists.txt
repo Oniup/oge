@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.2)
 
+add_subdirectory(portable-file-dialogs)
+
 add_library(
-    imgui STATIC 
+    imgui STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imconfig.h
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_demo.cpp

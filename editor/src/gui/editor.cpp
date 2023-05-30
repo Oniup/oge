@@ -1,15 +1,16 @@
 #include "gui/editor.hpp"
+#include "utils/utils.hpp"
+#include "utils/yaml_types.hpp"
 
-#include <ogl/utils/filesystem.hpp>
+#include <filesystem>
 
 #include <GLFW/glfw3.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/imgui.h>
+#include <portable-file-dialogs/portable-file-dialogs.h>
 
 namespace oge {
-
-ImVec4 convert_into_color(const glm::vec4& vec) { return ImVec4{vec.x, vec.y, vec.z, vec.w}; }
 
 enum ConsoleFileReadingStage {
     ConsoleFileReadingStage_Type,
@@ -42,50 +43,49 @@ EditorWorkspace::EditorWorkspace() {
 
     // Settings Preferences
 
-    // FIX: Make sure this works on windows
-#ifndef WIN32
-    std::string settings_path = ogl::FileSystem::get_env_var("HOME") + "/.config/oge";
-#else
-    std::string settings_path = ogl::FileSystem::get_env_var("APPDATA") + "/oge";
-#endif
+    std::string settings_path = pfd::path::home() + "/.config/oge";
+    if (!std::filesystem::exists(settings_path)) {
+        std::filesystem::create_directory(settings_path);
 
-    ogl::FileSystemAt settings = ogl::FileSystemAt(settings_path);
-    if (!settings.dir_exists()) {
-        settings = ogl::FileSystemAt(settings_path, true);
-        settings.copy_file_into_this("editor/assets/default_settings/preferences.yaml");
-        settings.create_dir("layouts");
+        // Create preference config file and its default for backup
+        std::filesystem::copy_file(
+            "editor/assets/default_settings/preferences.yaml", settings_path + "/preferences.yaml"
+        );
+        std::filesystem::copy_file(
+            "editor/assets/default_settings/preferences.yaml",
+            settings_path + "/default_preferences.yaml"
+        );
 
-        settings.set_directory(settings.get_current_path() + "/layouts");
-        settings.copy_file_into_this(
-            "editor/assets/default_settings/layout1.ini", "layout1.ini"
+        // Pushing the 2 default layouts
+        std::string layouts_path = settings_path + "/layouts";
+        std::filesystem::create_directory(layouts_path);
+        std::filesystem::copy_file(
+            "editor/assets/default_settings/layout1.ini", layouts_path + "/layout1.ini"
         );
-        settings.copy_file_into_this(
-            "editor/assets/default_settings/layout2.ini", "layout2.ini"
+        std::filesystem::copy_file(
+            "editor/assets/default_settings/layout2.ini", layouts_path + "/layout2.ini"
         );
-        settings.set_directory(settings_path);
     }
 
     std::string path = settings_path + "/preferences.yaml";
-    ogl::YamlSerialization preferences = ogl::YamlSerialization(path);
-    ogl::YamlSerializationOption* ui = preferences.get(PREF_FIELD_EDITOR_UI);
+    yaml::Node preferences = yaml::open(path);
+    yaml::Node& ui = preferences["EditorUI"];
 
-    if (ui->get("reset_layout_on_open")->convert_value<bool>()) {
+    if (ui["ResetLayoutOnLoad"].as<bool>()) {
         std::remove("imgui.ini");
 
-        std::string default_layout = ui->get("layout")->convert_value<std::string>();
-        if (!ogl::FileSystem::copy_file(
+        std::string default_layout = ui["Layout"].as<std::string>();
+        if (!std::filesystem::copy_file(
                 settings_path + "/layouts/" + default_layout + ".ini", "imgui.ini"
             )) {
             ogl::Debug::log("Failed to load editor layout", ogl::DebugType_Error);
         }
     }
 
-    io.FontDefault = io.Fonts->AddFontFromFileTTF(
-        ui->get(PREF_EDITOR_UI_FONT_REGULAR)->convert_value<std::string>().c_str(), 18.0f
-    );
+    io.FontDefault =
+        io.Fonts->AddFontFromFileTTF(ui["FontRegular"].as<std::string>().c_str(), 18.0f);
 
-    ogl::YamlSerializationOption* color_theme = ui->get(PREF_FIELD_EDITOR_UI_COLOR);
-    _load_color_theme(color_theme);
+    _load_color_theme(ui["ColorTheme"]);
 }
 
 EditorWorkspace::~EditorWorkspace() {
@@ -152,184 +152,32 @@ void EditorWorkspace::on_update() {
     }
 }
 
-void EditorWorkspace::_load_color_theme(ogl::YamlSerializationOption* ui_color) {
+void EditorWorkspace::_load_color_theme(yaml::Node& ui_color) {
     auto& colors = ImGui::GetStyle().Colors;
 
-    colors[ImGuiCol_WindowBg] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_WINDOW_BG].convert_value<glm::vec4>());
-
-    colors[ImGuiCol_Header] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER].convert_value<glm::vec4>());
-    colors[ImGuiCol_HeaderHovered] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER_HOVERED].convert_value<glm::vec4>()
-        );
-    colors[ImGuiCol_HeaderActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_HEADER_ACTIVE].convert_value<glm::vec4>());
-
-    colors[ImGuiCol_Button] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON].convert_value<glm::vec4>());
-    colors[ImGuiCol_ButtonHovered] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON_HOVERED].convert_value<glm::vec4>()
-        );
-    colors[ImGuiCol_ButtonActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_BUTTON_ACTIVE].convert_value<glm::vec4>());
-
-    colors[ImGuiCol_FrameBg] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_FRAME_BG].convert_value<glm::vec4>());
-    colors[ImGuiCol_FrameBgHovered] = convert_into_color(
-        ui_color->scope[PREF_UI_COLOR_FRAME_BG_HOVERED].convert_value<glm::vec4>()
-    );
-    colors[ImGuiCol_FrameBgActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_FRAME_BG_ACTIVE].convert_value<glm::vec4>()
-        );
-
-    colors[ImGuiCol_Tab] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB].convert_value<glm::vec4>());
-    colors[ImGuiCol_TabHovered] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_HOVERED].convert_value<glm::vec4>());
-    colors[ImGuiCol_TabActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_ACTIVE].convert_value<glm::vec4>());
-    colors[ImGuiCol_TabUnfocused] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TAB_UNFOCUSED].convert_value<glm::vec4>());
-    colors[ImGuiCol_TabUnfocusedActive] = convert_into_color(
-        ui_color->scope[PREF_UI_COLOR_TAB_UNFOCUSED_ACTIVE].convert_value<glm::vec4>()
-    );
-
-    colors[ImGuiCol_TitleBg] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TITLE_BG].convert_value<glm::vec4>());
-    colors[ImGuiCol_TitleBgActive] =
-        convert_into_color(ui_color->scope[PREF_UI_COLOR_TITLE_BG_ACTIVE].convert_value<glm::vec4>()
-        );
-    colors[ImGuiCol_TitleBgCollapsed] = convert_into_color(
-        ui_color->scope[PREF_UI_COLOR_TITLE_BG_COLLAPSED].convert_value<glm::vec4>()
-    );
+    colors[ImGuiCol_WindowBg] = ui_color["WindowBg"].as<ImVec4>();
+    colors[ImGuiCol_Header] = ui_color["Header"].as<ImVec4>();
+    colors[ImGuiCol_HeaderHovered] = ui_color["HeaderHovered"].as<ImVec4>();
+    colors[ImGuiCol_HeaderActive] = ui_color["HeaderActive"].as<ImVec4>();
+    colors[ImGuiCol_Button] = ui_color["Button"].as<ImVec4>();
+    colors[ImGuiCol_ButtonHovered] = ui_color["ButtonHovered"].as<ImVec4>();
+    colors[ImGuiCol_ButtonActive] = ui_color["ButtonActive"].as<ImVec4>();
+    colors[ImGuiCol_FrameBg] = ui_color["FrameBg"].as<ImVec4>();
+    colors[ImGuiCol_FrameBgHovered] = ui_color["FrameBgHovered"].as<ImVec4>();
+    colors[ImGuiCol_FrameBgActive] = ui_color["FrameBgActive"].as<ImVec4>();
+    colors[ImGuiCol_Tab] = ui_color["Tab"].as<ImVec4>();
+    colors[ImGuiCol_TabHovered] = ui_color["TabHovered"].as<ImVec4>();
+    colors[ImGuiCol_TabActive] = ui_color["TabActive"].as<ImVec4>();
+    colors[ImGuiCol_TabUnfocused] = ui_color["TabUnfocused"].as<ImVec4>();
+    colors[ImGuiCol_TabUnfocusedActive] = ui_color["TabUnfocusedActive"].as<ImVec4>();
+    colors[ImGuiCol_TitleBg] = ui_color["TitleBg"].as<ImVec4>();
+    colors[ImGuiCol_TitleBgActive] = ui_color["TitleBgActive"].as<ImVec4>();
+    colors[ImGuiCol_TitleBgCollapsed] = ui_color["TitleBgCollapsed"].as<ImVec4>();
 }
 
 /******************************************************************************/
 /******************************** Base Windows ********************************/
 /******************************************************************************/
-
-DockingEditorWorkspace::DockingEditorWorkspace(EditorWorkspace* workspace)
-    : PanelEditorWorkspaceBase("Docking") {
-    m_dock_node_flags = ImGuiDockNodeFlags_None;
-
-    m_window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
-                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                     ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-    m_workspace = workspace;
-    get_enabled() = true;
-}
-
-void DockingEditorWorkspace::on_imgui_update() {
-    const ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
-    ImGui::SetNextWindowViewport(viewport->ID);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin(get_name().c_str(), &get_enabled(), m_window_flags);
-    ImGui::PopStyleVar(3);
-
-    ImGuiID dock_space_id = ImGui::GetID("DockSpace");
-    ImGui::DockSpace(dock_space_id, ImVec2(0.0f, 0.0f), m_dock_node_flags);
-
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-            if (ImGui::BeginMenu("Open")) {
-                ImGui::EndMenu();
-            }
-            if (ImGui::MenuItem("Save", "CTR+S")) {
-            }
-
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("View")) {
-            if (ImGui::BeginMenu("Workspace")) {
-                const std::vector<PanelEditorWorkspaceBase*>& panels =
-                    m_workspace->get_all_panels();
-
-                for (PanelEditorWorkspaceBase* panel : panels) {
-                    if (panel->get_name() != get_name()) {
-                        ImGui::MenuItem(panel->get_name().c_str(), nullptr, &panel->get_enabled());
-                    }
-                }
-
-                ImGui::EndMenu();
-            }
-
-            if (ImGui::MenuItem("Preferences")) {
-                if (m_workspace->get_panel("Preferences") == nullptr) {
-                    m_workspace->push_panel<PreferencesEditorPopup>();
-                }
-            }
-
-            ImGui::EndMenu();
-        }
-        ImGui::EndMenuBar();
-    }
-
-    ImGui::End();
-}
-
-void DockingEditorWorkspace::_menu_open_window(std::string_view panel_name) {}
-
-HierarchyEditorWorkspace::HierarchyEditorWorkspace() : PanelEditorWorkspaceBase("Hierarchy") {}
-
-void HierarchyEditorWorkspace::on_imgui_update() {
-    ImGui::Begin(get_name().c_str(), &get_enabled());
-
-    entt::registry& registry = ogl::SceneManager::get()->get_active_scene()->get_registry();
-    const entt::entity* entities = registry.data();
-
-    entt::entity entity_clicked = get_non_selected_entity_value();
-    for (std::size_t i = 0; i < registry.size(); i++) {
-        ogl::Entity entity = ogl::Entity(entities[i]);
-
-        // PERFORMANCE: try to avoid string comparison
-        ogl::TagComponent* tag = entity.get_component<ogl::TagComponent>();
-        bool include_ent = true;
-        if (tag != nullptr) {
-            if (strncmp(tag->tag, HIERARCHY_FILTER_NAME, strlen(tag->tag)) == 0) {
-                include_ent = false;
-            }
-        }
-
-        if (include_ent) {
-            ogl::NameComponent* name = entity.get_component<ogl::NameComponent>();
-            int flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                        ImGuiTreeNodeFlags_SpanFullWidth;
-            if (m_selected_entity == entities[i]) {
-                flags |= ImGuiTreeNodeFlags_Selected;
-            }
-            if (name != nullptr) {
-                ImGui::TreeNodeEx(
-                    reinterpret_cast<void*>(static_cast<intptr_t>(entities[i])), flags, "%s (%u)",
-                    name->get(), entities[i]
-                );
-            } else {
-                ImGui::TreeNodeEx(
-                    reinterpret_cast<void*>(static_cast<intptr_t>(entities[i])), flags,
-                    "No Name: (%u)", entities[i]
-                );
-            }
-
-            if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-                entity_clicked = entities[i];
-            }
-        }
-    }
-
-    if (entity_clicked != get_non_selected_entity_value()) {
-        m_selected_entity = entity_clicked;
-    }
-
-    ImGui::End();
-}
 
 ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
     : PanelEditorWorkspaceBase("Console") {
@@ -339,23 +187,13 @@ ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
         std::get<std::string>(m_filters[i]) = std::move(names[i]);
     }
 
-#ifndef WIN32
-    std::string settings_path =
-        ogl::FileSystem::get_env_var("HOME") + "/.config/oge/preferences.yaml";
-#else
-    std::string settings_path = ogl::FileSystem::get_env_var("APPDATA") + "/oge/preferences.yaml";
-#endif
-
+    std::string settings_path = pfd::path::home() + "/.config/oge/preferences.yaml";
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
 
-    ogl::YamlSerialization preferences = ogl::YamlSerialization(settings_path.c_str());
+    yaml::Node preferences = yaml::open(settings_path);
     m_font = io.Fonts->AddFontFromFileTTF(
-        preferences.get(PREF_FIELD_EDITOR_UI)
-            ->get(PREF_EDITOR_UI_FONT_MONO)
-            ->convert_value<std::string>()
-            .c_str(),
-        18.0f
+        preferences["EditorUI"].get_child("FontMono").as<std::string>().c_str(), 18.0f
     );
 
     m_debug = debug;
