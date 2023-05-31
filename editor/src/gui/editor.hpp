@@ -137,6 +137,7 @@ class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
 
   private:
     void _camera_controller(ogl::CameraComponent* camera);
+    void _no_scene(ogl::CameraComponent* camera, float window_width, float window_height);
     void _no_project();
 
     glm::ivec2 m_last_required_framebuffer_size = {};

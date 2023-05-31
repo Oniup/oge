@@ -14,6 +14,8 @@ class Project : public ogl::ApplicationLayer {
     Project();
     virtual ~Project() override = default;
 
+    inline bool unsaved() const { return m_unsaved; }
+    inline bool& unsaved() { return m_unsaved; }
     inline bool opened() const { return m_name.size() > 0; }
     inline bool is_3d_based() const { return m_3d_based; }
     inline bool& is_3d_based() { return m_3d_based; }
@@ -37,6 +39,7 @@ class Project : public ogl::ApplicationLayer {
     std::string m_root_path = {};
     std::string m_project_filename = {};
     bool m_3d_based = true;
+    bool m_unsaved = false;
 };
 
 } // namespace oge

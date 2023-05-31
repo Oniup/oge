@@ -1,5 +1,6 @@
 #include "core/project.hpp"
 #include "gui/editor.hpp"
+#include "gui/preferences.hpp"
 #include "utils/utils.hpp"
 
 #include <imgui/imgui.h>
@@ -20,8 +21,12 @@ ViewportEditorWorkspace::ViewportEditorWorkspace(ogl::Framebuffer* framebuffer)
 
 void ViewportEditorWorkspace::on_imgui_update() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    int window_flags = ImGuiWindowFlags_NoScrollbar;
+    if (Project::get()->unsaved()) {
+        window_flags |= ImGuiWindowFlags_UnsavedDocument;
+    }
 
-    ImGui::Begin(get_name().c_str(), &get_enabled(), ImGuiWindowFlags_NoScrollbar);
+    ImGui::Begin(get_name().c_str(), &get_enabled(), window_flags);
     {
         ImGui::PopStyleVar();
 
@@ -43,25 +48,7 @@ void ViewportEditorWorkspace::on_imgui_update() {
             ImVec2 window_size = ImGui::GetWindowSize();
 
             if (Project::get()->opened()) {
-                ImVec2 text_size = ImGui::CalcTextSize("Create Empty Scene");
-                ImGui::SetCursorPosX((window_size.x - text_size.x) * 0.5f);
-                ImGui::SetCursorPosY((window_size.y - text_size.y) * 0.5f);
-
-                if (ImGui::Button("Create Empty Scene")) {
-                    ogl::SceneManager::get()->set_active(
-                        ogl::SceneManager::get()->push("Empty Scene")
-                    );
-
-                    // Create Editor Camera for new scene
-                    ogl::Entity entity = ogl::Entity(true);
-                    entity.add_component<ogl::TagComponent>(HIERARCHY_FILTER_NAME);
-
-                    editor_camera = entity.add_component<ogl::CameraComponent>();
-                    editor_camera->clear_color = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-                    editor_camera->is_main = true;
-                    // TODO: Set to Orthographic if in 2D mode
-                    editor_camera->projection_type = ogl::CameraProjection_Perspective;
-                }
+                _no_scene(editor_camera, window_size.x, window_size.y);
             } else {
                 _no_project();
             }
@@ -170,6 +157,29 @@ void ViewportEditorWorkspace::_camera_controller(ogl::CameraComponent* camera) {
     last_mouse_position = mouse_position;
 }
 
+void ViewportEditorWorkspace::_no_scene(
+    ogl::CameraComponent* editor_camera, float window_width, float window_height
+) {
+    ImVec2 text_size = ImGui::CalcTextSize("Create Empty Scene");
+    ImGui::SetCursorPosX((window_width - text_size.x) * 0.5f);
+    ImGui::SetCursorPosY((window_height - text_size.y) * 0.5f);
+
+    if (ImGui::Button("Create Empty Scene")) {
+        ogl::SceneManager::get()->set_active(ogl::SceneManager::get()->push("Empty Scene"));
+
+        // Create Editor Camera for new scene
+        ogl::Entity entity = ogl::Entity(true);
+        entity.add_component<ogl::TagComponent>(HIERARCHY_FILTER_NAME);
+
+        editor_camera = entity.add_component<ogl::CameraComponent>();
+        editor_camera->clear_color = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
+        editor_camera->is_main = true;
+        // TODO: Set to Orthographic if in 2D mode
+        editor_camera->projection_type = ogl::CameraProjection_Perspective;
+        Project::get()->unsaved() = true;
+    }
+}
+
 void ViewportEditorWorkspace::_no_project() {
     ImVec2 available_space = ImGui::GetContentRegionAvail();
     ImVec2 child_window_size = ImVec2(available_space.x * 0.5f, available_space.y * 0.5f);
@@ -200,7 +210,28 @@ void ViewportEditorWorkspace::_no_project() {
                     )
                         .result();
                 if (files.size() > 0) {
-                    Project::get()->load(files[0]);
+                    if (Project::get()->load(files[0])) {
+                        // Update preferences config
+                        yaml::Node project_config = yaml::open(files[0]);
+                        yaml::Node preferences = Preferences::get_preferences();
+                        yaml::Node& project = preferences["Project"];
+
+                        std::vector<std::string> recently_opened =
+                            project["RecentlyOpened"].as<std::vector<std::string>>();
+                        bool found = false;
+                        for (const std::string& name : recently_opened) {
+                            if (name == project_config["ProjectName"].as<std::string>()) {
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (!found) {
+                            recently_opened.push_back(files[0]);
+                            project["RecentlyOpened"] = recently_opened;
+                            preferences.write_file(Preferences::get_preferences_path());
+                        }
+                    }
                 }
             }
         }
@@ -208,8 +239,14 @@ void ViewportEditorWorkspace::_no_project() {
 
         ImGui::SameLine();
 
+        // List all recently opened projects, allow removing projects from the list
         ImGui::BeginChild("No Project Enabled -> Recently Opened", ImVec2(0.0f, 0.0f));
         {
+            yaml::Node preferences = Preferences::get_preferences();
+            yaml::Node& project_node = preferences["Project"];
+            std::vector<std::string> recently_opened =
+                project_node["RecentlyOpened"].as<std::vector<std::string>>();
+
             float text_width = ImGui::CalcTextSize("Recent Projects").x;
             ImGui::SetCursorPosX((child_window_size.x * 0.5f - text_width) * 0.5f);
             ImGui::Text("Recent Projects");
@@ -217,8 +254,45 @@ void ViewportEditorWorkspace::_no_project() {
             ImGui::BeginChild(
                 "No Project Enabled -> Recently Opened List", ImVec2(0.0f, 0.0f), true
             );
-            {
-                // TODO: have a list of projects recently opened saved in preferences
+            if (recently_opened.size() > 0) {
+                std::size_t last_size = recently_opened.size();
+
+                // Printing project select and remove button
+                for (std::size_t i = 0; i < recently_opened.size(); i++) {
+                    yaml::Node project_config = yaml::open(recently_opened[i]);
+                    if (project_config.empty()) {
+                        recently_opened.erase(recently_opened.begin() + i);
+                        continue;
+                    }
+
+                    if (ImGui::Button(
+                            project_config["ProjectName"].as<std::string>().c_str(),
+                            ImVec2(
+                                ImGui::GetContentRegionAvail().x -
+                                    (ImGui::CalcTextSize("X").x + ImGui::GetStyle().FramePadding.x +
+                                     ImGui::GetStyle().WindowPadding.x +
+                                     ImGui::GetStyle().ItemInnerSpacing.x),
+                                0.0f
+                            )
+                        )) {
+                        if (!Project::get()->load(recently_opened[i])) {
+                            recently_opened.erase(recently_opened.begin() + i);
+                        }
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("X")) {
+                        recently_opened.erase(recently_opened.begin() + i);
+                    }
+                }
+
+                // Update preferences config
+                if (recently_opened.size() != last_size) {
+                    project_node["RecentlyOpened"] = recently_opened;
+                    assert(
+                        yaml::write(preferences, Preferences::get_preferences_path()) &&
+                        "failed to write to preferences when editing recently opened projects"
+                    );
+                }
             }
             ImGui::EndChild();
         }

@@ -26,3 +26,5 @@ EditorUI:
     TitleBgActive: [0.15, 0.1505, 0.151, 1.0]
     TitleBgCollapsed: [0.15, 0.1505, 0.151, 1.0]
   SavedLayouts: ["layout1", "layout2"]
+Project:
+  RecentlyOpened: []

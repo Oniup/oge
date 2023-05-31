@@ -10,6 +10,7 @@ set(EDITOR_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hierarchy.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/docking.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/preferences.hpp
 
     CACHE INTERNAL ""
 )
