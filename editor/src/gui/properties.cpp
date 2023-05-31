@@ -245,7 +245,11 @@ void PropertiesEditorWorkspace::on_imgui_update() {
         ogl::TagComponent* tag = entity.get_component<ogl::TagComponent>();
 
         if (name != nullptr) {
-            ImGui::InputText("Name", name->get(), OGL_NAME_COMPONENT_MAX_SIZE);
+            char str[OGL_NAME_COMPONENT_MAX_SIZE];
+            strncpy(str, name->name.c_str(), name->name.size());
+            str[name->name.size()] = '\0';
+            ImGui::InputText("Name", str, OGL_NAME_COMPONENT_MAX_SIZE);
+            name->name = str;
         } else {
             if (ImGui::Button("Add Name Component")) {
                 entity.add_component<ogl::NameComponent>("Entity");
@@ -253,7 +257,11 @@ void PropertiesEditorWorkspace::on_imgui_update() {
         }
 
         if (tag != nullptr) {
-            ImGui::InputText("Tag", tag->get(), OGL_NAME_COMPONENT_MAX_SIZE);
+            char str[OGL_NAME_COMPONENT_MAX_SIZE];
+            strncpy(str, tag->tag.c_str(), tag->tag.size());
+            str[tag->tag.size()] = '\0';
+            ImGui::InputText("Tag", str, OGL_NAME_COMPONENT_MAX_SIZE);
+            tag->tag = str;
         } else {
             if (ImGui::Button("Add Tag Component")) {
                 entity.add_component<ogl::TagComponent>("");

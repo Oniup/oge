@@ -138,6 +138,6 @@ void DockingEditorWorkspace::on_imgui_update() {
     ImGui::End();
 }
 
-void DockingEditorWorkspace::_menu_open_window(std::string_view panel_name) {}
+void DockingEditorWorkspace::_menu_open_window(const std::string& panel_name) {}
 
 } // namespace oge

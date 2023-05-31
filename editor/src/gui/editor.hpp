@@ -15,7 +15,7 @@ namespace oge {
 
 class PanelEditorWorkspaceBase {
   public:
-    PanelEditorWorkspaceBase(std::string_view name);
+    PanelEditorWorkspaceBase(const std::string& name);
     virtual ~PanelEditorWorkspaceBase() = default;
 
     inline const std::string& get_name() const { return m_name; }
@@ -24,7 +24,7 @@ class PanelEditorWorkspaceBase {
     inline bool& get_enabled() { return m_enabled; }
     inline bool& get_remove_when_disabled() { return m_remove_when_disabled; }
 
-    bool remove_modal_popup(std::string_view name);
+    bool remove_modal_popup(const std::string& name);
 
     virtual void on_imgui_update() {}
 
@@ -50,9 +50,9 @@ class EditorWorkspace : public ogl::ApplicationLayer {
         return static_cast<_Panel*>(m_panels.back());
     }
 
-    PanelEditorWorkspaceBase* get_panel(std::string_view name);
+    PanelEditorWorkspaceBase* get_panel(const std::string& name);
     const std::vector<PanelEditorWorkspaceBase*>& get_all_panels() { return m_panels; }
-    void remove_panel(std::string_view name);
+    void remove_panel(const std::string& name);
 
     void push_panels(std::initializer_list<PanelEditorWorkspaceBase*> panels);
 
@@ -77,7 +77,7 @@ class DockingEditorWorkspace : public PanelEditorWorkspaceBase {
     virtual void on_imgui_update() override;
 
   private:
-    void _menu_open_window(std::string_view panel_name);
+    void _menu_open_window(const std::string& panel_name);
 
     class EditorWorkspace* m_workspace = nullptr;
     int m_dock_node_flags = 0;
@@ -96,7 +96,7 @@ class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase {
   private:
     void _draw_entity(ogl::Entity entity, ecs::Entity& entity_clicked, bool& opened_popup);
     void _create_shape(
-        std::string_view new_entity_name, std::string_view mesh_file_path, ogl::Entity* parent
+        const std::string& new_entity_name, const std::string& mesh_file_path, ogl::Entity* parent
     );
     void _popup_menu(ogl::Entity* entity = nullptr);
 
