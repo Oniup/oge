@@ -2,6 +2,7 @@
 #define __OGE_UTILS_YAML_TYPES_HPP__
 
 #include <imgui/imgui.h>
+#include <ogl/ogl.hpp>
 #include <yaml/yaml.hpp>
 
 template<>

@@ -22,15 +22,15 @@ App::App() {
         ->use_default_framebuffer(false);
 
     // Debug Logger
-    ogl::Debug* debug = get_layer<ogl::Debug>(OGL_CORE_DEBUG_LAYER_NAME);
+    ogl::Debug* debug = get_layer<ogl::Debug>();
     debug->set_automatically_clear_on_update(false);
     debug->set_serialize(true);
 
     // Editor Project Layer
-    push_layer<Project>("EditorProject");
+    push_layer<Project>();
 
     // Editor Workspace Layer
-    EditorWorkspace* workspace = push_layer<EditorWorkspace>("EditorWorkspace");
+    EditorWorkspace* workspace = push_layer<EditorWorkspace>();
     workspace->push_panels({
         new DockingEditorWorkspace(workspace),
         new ConsoleEditorWorkspace(debug),
