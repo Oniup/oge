@@ -25,7 +25,7 @@ class Project : public ogl::ApplicationLayer {
 
     bool create(const std::string& name, const std::string& project_root_path, bool is_3d_based);
     bool load(const std::string& project_filename);
-    void serialize(const std::string& path);
+    void serialize(const std::string& filename, bool use_scene_name);
 
   private:
     static Project* m_Instance;

@@ -197,7 +197,24 @@ bool Project::load(const std::string& project_filename) {
     return false;
 }
 
-void Project::serialize(const std::string& path) {}
+void Project::serialize(const std::string& filename, bool use_scene_name) {
+    ogl::SerializableTypeHandler* handler =
+        ogl::Application::get()->get_layer<ogl::SerializableTypeHandler>();
+    ogl::SceneManager* scene_manager = ogl::Application::get()->get_layer<ogl::SceneManager>();
+
+    ogl::Scene* scene = scene_manager->get_active_scene();
+    if (!use_scene_name) {
+        std::size_t name_offset = filename.find_last_of('/') + 1;
+        std::size_t scene_name_size = filename.find_last_of('.') - name_offset;
+        std::string scene_name = std::string(filename.c_str() + name_offset, scene_name_size);
+        scene->set_name(scene_name);
+    }
+
+    handler->serialize(scene, filename, false);
+    m_unsaved = false;
+
+    ogl::Debug::log("Created scene " + filename);
+}
 
 void Project::_deserialize_scene(ogl::Scene* scene) {}
 void Project::_serialize_scene(ogl::Scene* scene) {}

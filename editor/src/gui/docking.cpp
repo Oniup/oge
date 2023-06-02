@@ -95,9 +95,22 @@ void DockingEditorWorkspace::on_imgui_update() {
             }
 
             if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, scene_loaded)) {
+                ogl::Debug::log("Not Implemented yet", ogl::DebugType_Warning);
             }
 
             if (ImGui::MenuItem("Save As", "Ctrl+Shift+S", nullptr, scene_loaded)) {
+                if (ogl::Application::get()->get_layer<ogl::SceneManager>()->get_active_scene() !=
+                    nullptr) {
+                    Project* project = ogl::Application::get()->get_layer<Project>();
+                    std::string filename = pfd::save_file(
+                                               "Create Scene", project->get_root_path(),
+                                               {"Oniup Scene Files", "*.oscene"}
+                    )
+                                               .result();
+                    if (filename.size() > 0) {
+                        project->serialize(filename, false);
+                    }
+                }
             }
 
             ImGui::EndMenu();
