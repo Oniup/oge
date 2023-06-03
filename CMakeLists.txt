@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.2)
 project(OGE)
 
+set(OGL_BUILD_SHARED TRUE CACHE INTERNAL "")
+# set(OGL_BUILD_SHARED FALSE CACHE INTERNAL "")
+
 add_subdirectory(ogl)
 add_subdirectory(editor/thirdparty)
 
@@ -49,7 +52,7 @@ set_target_properties(
 )
 
 target_compile_definitions(
-    OGE 
+    OGE
     PUBLIC _CRT_NONSTDC_NO_WARNINGS
 )
 

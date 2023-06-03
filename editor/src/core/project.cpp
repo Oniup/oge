@@ -144,7 +144,9 @@ bool Project::create(
 
     if (std::filesystem::create_directory(m_root_path)) {
         yaml::Node root = {};
-        root << yaml::node("ProjectName", m_name) << yaml::node("SceneCount", 0);
+        root << yaml::node("ProjectName", m_name) << yaml::node("SceneCount", 0)
+             << yaml::node("Scenes");
+
         if (yaml::write(root, m_project_filename)) {
             ogl::Pipeline::get()->get_window()->set_title("Oniups Game Editor - " + m_name);
 
@@ -198,25 +200,36 @@ bool Project::load(const std::string& project_filename) {
 }
 
 void Project::serialize(const std::string& filename, bool use_scene_name) {
-    ogl::SerializableTypeHandler* handler =
-        ogl::Application::get()->get_layer<ogl::SerializableTypeHandler>();
-    ogl::SceneManager* scene_manager = ogl::Application::get()->get_layer<ogl::SceneManager>();
+    yaml::Node project_node = yaml::open(m_project_filename);
+    if (!project_node.empty()) {
+        ogl::SerializableTypeHandler* handler =
+            ogl::Application::get()->get_layer<ogl::SerializableTypeHandler>();
+        ogl::SceneManager* scene_manager = ogl::Application::get()->get_layer<ogl::SceneManager>();
 
-    ogl::Scene* scene = scene_manager->get_active_scene();
-    if (!use_scene_name) {
-        std::size_t name_offset = filename.find_last_of('/') + 1;
-        std::size_t scene_name_size = filename.find_last_of('.') - name_offset;
-        std::string scene_name = std::string(filename.c_str() + name_offset, scene_name_size);
-        scene->set_name(scene_name);
+        ogl::Scene* scene = scene_manager->get_active_scene();
+        if (!use_scene_name) {
+            std::size_t name_offset = filename.find_last_of('/') + 1;
+            std::size_t scene_name_size = filename.find_last_of('.') - name_offset;
+            std::string scene_name = std::string(filename.c_str() + name_offset, scene_name_size);
+            scene->set_name(scene_name);
+        }
+
+        handler->serialize_text(scene, filename);
+        m_unsaved = false;
+
+        // Updating project file so it knows about the knewly created scene
+        std::size_t scenes_count = project_node["SceneCount"].as<std::size_t>();
+
+        yaml::Node& scenes_node = project_node["Scenes"];
+        scenes_node << yaml::node(scene->get_name(), filename);
+        project_node["SceneCount"] = scenes_count + 1;
+
+        project_node.write_file(m_project_filename);
+    } else {
+        ogl::Debug::log("Cannot serialize scene, cannot open Project file", ogl::DebugType_Error);
     }
-
-    handler->serialize(scene, filename, false);
-    m_unsaved = false;
-
-    ogl::Debug::log("Created scene " + filename);
 }
 
-void Project::_deserialize_scene(ogl::Scene* scene) {}
-void Project::_serialize_scene(ogl::Scene* scene) {}
+void Project::deserialize(ogl::Scene* scene, const std::string& filename) {}
 
 } // namespace oge
