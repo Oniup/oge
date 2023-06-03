@@ -15,24 +15,28 @@ App::App() {
                                       "therefore cannot run this program, sorry"
     );
 
+    // Framebuffers
     ogl::Pipeline::get()->get_window()->set_title("Oniup's Game Editor - No Project Selected");
     ogl::Pipeline::get()->get_window()->set_size(ogl::WindowResolution_Maximize);
     static_cast<ogl::BasicRenderer*>(ogl::Pipeline::get()->push_renderer(new ogl::BasicRenderer()))
         ->use_default_framebuffer(false);
-    ogl::Framebuffer* editor_viewport_framebuffer =
-        ogl::Pipeline::get()->create_framebuffer("editor viewport", 1280, 720);
 
-    ogl::Debug* debug = get_layer<ogl::Debug>(OGL_CORE_DEBUG_LAYER_NAME);
+    // Debug Logger
+    ogl::Debug* debug = get_layer<ogl::Debug>();
     debug->set_automatically_clear_on_update(false);
     debug->set_serialize(true);
 
-    push_layer<Project>("EditorProject");
-    // initialize editor workspace
-    EditorWorkspace* workspace = push_layer<EditorWorkspace>("EditorWorkspace");
+    // Editor Project Layer
+    push_layer<Project>();
+
+    // Editor Workspace Layer
+    EditorWorkspace* workspace = push_layer<EditorWorkspace>();
     workspace->push_panels({
         new DockingEditorWorkspace(workspace),
         new ConsoleEditorWorkspace(debug),
-        new ViewportEditorWorkspace(editor_viewport_framebuffer),
+        new ViewportEditorWorkspace(
+            ogl::Pipeline::get()->create_framebuffer("editor viewport", 1280, 720)
+        ),
         new HierarchyEditorWorkspace(),
         new AssetsEditorWorkspace(),
     });

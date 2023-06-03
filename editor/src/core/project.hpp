@@ -14,6 +14,8 @@ class Project : public ogl::ApplicationLayer {
     Project();
     virtual ~Project() override = default;
 
+    inline bool unsaved() const { return m_unsaved; }
+    inline bool& unsaved() { return m_unsaved; }
     inline bool opened() const { return m_name.size() > 0; }
     inline bool is_3d_based() const { return m_3d_based; }
     inline bool& is_3d_based() { return m_3d_based; }
@@ -23,20 +25,18 @@ class Project : public ogl::ApplicationLayer {
 
     bool create(const std::string& name, const std::string& project_root_path, bool is_3d_based);
     bool load(const std::string& project_filename);
-    void serialize(const std::string& path);
+    void serialize(const std::string& filename, bool use_scene_name);
+    void deserialize(ogl::Scene* scene, const std::string& filename);
 
   private:
     static Project* m_Instance;
-
-  private:
-    void _deserialize_scene(ogl::Scene* scene);
-    void _serialize_scene(ogl::Scene* scene);
 
   private:
     std::string m_name = {};
     std::string m_root_path = {};
     std::string m_project_filename = {};
     bool m_3d_based = true;
+    bool m_unsaved = false;
 };
 
 } // namespace oge

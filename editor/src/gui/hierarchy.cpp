@@ -22,8 +22,7 @@ void HierarchyEditorWorkspace::on_imgui_update() {
                 ogl::TagComponent* tag = entity.get_component<ogl::TagComponent>();
                 bool include_ent = true;
                 if (tag != nullptr) {
-                    std::size_t length = strlen(tag->tag);
-                    if (length > 0) {
+                    if (tag->tag.size() > 0) {
                         // PERFORMANCE: try to avoid string comparison
                         if (std::string(HIERARCHY_FILTER_NAME) == tag->tag) {
                             include_ent = false;
@@ -86,7 +85,7 @@ void HierarchyEditorWorkspace::_draw_entity(
 }
 
 void HierarchyEditorWorkspace::_create_shape(
-    std::string_view new_entity_name, std::string_view mesh_file_path, ogl::Entity* parent
+    const std::string& new_entity_name, const std::string& mesh_file_path, ogl::Entity* parent
 ) {
     ogl::Entity entity{};
     ogl::NameComponent* name = entity.add_component<ogl::NameComponent>(new_entity_name);

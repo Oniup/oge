@@ -18,7 +18,7 @@ enum ConsoleFileReadingStage {
     ConsoleFileReadingStage_Message
 };
 
-PanelEditorWorkspaceBase::PanelEditorWorkspaceBase(std::string_view name) : m_name(name) {
+PanelEditorWorkspaceBase::PanelEditorWorkspaceBase(const std::string& name) : m_name(name) {
     m_io = &ImGui::GetIO();
     static_cast<void>(*m_io);
 }
@@ -98,7 +98,7 @@ EditorWorkspace::~EditorWorkspace() {
     ImGui::DestroyContext();
 }
 
-PanelEditorWorkspaceBase* EditorWorkspace::get_panel(std::string_view name) {
+PanelEditorWorkspaceBase* EditorWorkspace::get_panel(const std::string& name) {
     for (PanelEditorWorkspaceBase* panel : m_panels) {
         if (panel->get_name() == name) {
             return panel;
@@ -108,7 +108,7 @@ PanelEditorWorkspaceBase* EditorWorkspace::get_panel(std::string_view name) {
     return nullptr;
 }
 
-void EditorWorkspace::remove_panel(std::string_view name) {
+void EditorWorkspace::remove_panel(const std::string& name) {
     for (std::size_t i = 0; i < m_panels.size(); i++) {
         if (m_panels[i]->get_name() == name) {
             delete m_panels[i];

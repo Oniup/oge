@@ -1,0 +1,30 @@
+#ifndef __OGE_GUI_PREFERENCES_HPP__
+#define __OGE_GUI_PREFERENCES_HPP__
+
+#include "utils/utils.hpp"
+#include <ogl/ogl.hpp>
+#include <portable-file-dialogs/portable-file-dialogs.h>
+#include <yaml/yaml.hpp>
+
+namespace oge {
+
+// TODO: Implement Preferences Editor window
+class Preferences {
+  public:
+    inline static const std::string get_preferences_path() {
+#ifndef _WIN32
+        return pfd::path::home() + "/.config/oge/preferences.yaml";
+#else
+        // TODO: ...
+#endif
+    }
+
+    inline static yaml::Node get_preferences() { return yaml::open(get_preferences_path()); }
+
+  public:
+    Preferences();
+};
+
+} // namespace oge
+
+#endif

@@ -1,5 +1,6 @@
 #include "core/project.hpp"
 #include "gui/editor.hpp"
+#include "gui/preferences.hpp"
 
 #include <imgui/imgui.h>
 #include <portable-file-dialogs/portable-file-dialogs.h>
@@ -63,13 +64,53 @@ void DockingEditorWorkspace::on_imgui_update() {
             }
 
             if (ImGui::BeginMenu("Open Recents")) {
+                yaml::Node preferences = Preferences::get_preferences();
+                yaml::Node& project_node = preferences["Project"];
+                std::vector<std::string> recently_opened =
+                    project_node["RecentlyOpened"].as<std::vector<std::string>>();
+
+                if (recently_opened.size() > 0) {
+                    std::size_t last_size = recently_opened.size();
+
+                    // Printing project select and remove button
+                    for (std::size_t i = 0; i < recently_opened.size(); i++) {
+                        yaml::Node project_config = yaml::open(recently_opened[i]);
+                        if (project_config.empty()) {
+                            recently_opened.erase(recently_opened.begin() + i);
+                            continue;
+                        }
+
+                        if (ImGui::MenuItem(project_config["ProjectName"].as<std::string>().c_str()
+                            )) {
+                            if (!Project::get()->load(recently_opened[i])) {
+                                recently_opened.erase(recently_opened.begin() + i);
+                                project_node["RecentlyOpened"] = recently_opened;
+                                preferences.write_file(Preferences::get_preferences_path());
+                            }
+                        }
+                    }
+                }
+
                 ImGui::EndMenu();
             }
 
             if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, scene_loaded)) {
+                ogl::Debug::log("Not Implemented yet", ogl::DebugType_Warning);
             }
 
             if (ImGui::MenuItem("Save As", "Ctrl+Shift+S", nullptr, scene_loaded)) {
+                if (ogl::Application::get()->get_layer<ogl::SceneManager>()->get_active_scene() !=
+                    nullptr) {
+                    Project* project = ogl::Application::get()->get_layer<Project>();
+                    std::string filename = pfd::save_file(
+                                               "Create Scene", project->get_root_path(),
+                                               {"Oniup Scene Files", "*.oscene"}
+                    )
+                                               .result();
+                    if (filename.size() > 0) {
+                        project->serialize(filename, false);
+                    }
+                }
             }
 
             ImGui::EndMenu();
@@ -110,6 +151,6 @@ void DockingEditorWorkspace::on_imgui_update() {
     ImGui::End();
 }
 
-void DockingEditorWorkspace::_menu_open_window(std::string_view panel_name) {}
+void DockingEditorWorkspace::_menu_open_window(const std::string& panel_name) {}
 
 } // namespace oge
