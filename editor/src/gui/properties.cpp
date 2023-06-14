@@ -13,7 +13,7 @@ class TransformPropertyDefinition : public PropertyTypeDefinition<ogl::Transform
     virtual void draw_imgui(ogl::Entity entity) override {
         ogl::TransformComponent* transform = entity.get_component<ogl::TransformComponent>();
 
-        ImGui::DragFloat3("Position", &transform->position[0], VectorSliderMoveSpeed);
+        ImGui::DragFloat3("Position", &transform->translation[0], VectorSliderMoveSpeed);
         ImGui::DragFloat3("Scale", &transform->scale[0], VectorSliderMoveSpeed);
         ImGui::DragFloat4("Rotation", &transform->rotation[0], VectorSliderMoveSpeed);
     }

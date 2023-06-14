@@ -43,6 +43,8 @@ App::App() {
     workspace->push_panel<PropertiesEditorWorkspace>(
         static_cast<HierarchyEditorWorkspace*>(workspace->get_panel("Hierarchy"))
     );
+
+    get_layer<ogl::ReflectionRegistry>()->print_types_to_logs();
 }
 
 } // namespace oge

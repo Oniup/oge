@@ -34,7 +34,7 @@ class PropertyTypeDefinition : public PropertyDefinition {
   public:
     PropertyTypeDefinition()
         : PropertyDefinition(
-              ogl::TypeInfo<_Component>::get_name(), ogl::TypeInfo<_Component>::get_hash()
+              ogl::TypeDescriptor<_Component>::get_name(), ogl::TypeDescriptor<_Component>::get_id()
           ) {}
 
     virtual void add_component(ogl::Entity entity) override { entity.add_component<_Component>(); }

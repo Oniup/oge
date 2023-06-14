@@ -6,6 +6,7 @@
 
 # Build Systems
 [Bb]in/
+[Bb]uild
 *.gen.*
 cmake_build_Debug
 cmake_build_Release

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
-project(OGE)
+project(oge)
 
 set(OGL_BUILD_SHARED TRUE CACHE INTERNAL "")
 # set(OGL_BUILD_SHARED FALSE CACHE INTERNAL "")
@@ -15,7 +15,7 @@ add_subdirectory(editor/src/utils)
 add_subdirectory(editor/src/core)
 
 add_executable(
-    OGE
+    oge
 
     ${EDITOR_ROOT_SOURCES}
     ${EDITOR_CORE_SOURCES}
@@ -24,14 +24,14 @@ add_executable(
 )
 
 target_link_libraries(
-    OGE
+    oge
 
     PUBLIC ogl
     PUBLIC imgui
 )
 
 target_include_directories(
-    OGE
+    oge
 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/editor/src
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/editor/thirdparty
@@ -41,9 +41,9 @@ target_include_directories(
 )
 
 set_target_properties(
-    OGE
+    oge
 
-    PROPERTIES 
+    PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -52,22 +52,26 @@ set_target_properties(
 )
 
 target_compile_definitions(
-    OGE
+    oge
     PUBLIC _CRT_NONSTDC_NO_WARNINGS
 )
 
+if (OGL_BUILD_SHARED)
+    target_compile_definitions(oge PUBLIC _OGL_DLL)
+endif ()
+
 add_custom_command(
-    TARGET OGE POST_BUILD
+    TARGET oge POST_BUILD
 
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/editor/assets
-    $<TARGET_FILE_DIR:OGE>/editor/assets
+    $<TARGET_FILE_DIR:oge>/editor/assets
 )
 
 add_custom_command(
-    TARGET OGE POST_BUILD
+    TARGET oge POST_BUILD
 
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/ogl/assets
-    $<TARGET_FILE_DIR:OGE>/ogl/assets
+    $<TARGET_FILE_DIR:oge>/ogl/assets
 )
