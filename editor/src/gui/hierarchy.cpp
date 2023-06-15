@@ -9,7 +9,7 @@ HierarchyEditorWorkspace::HierarchyEditorWorkspace() : PanelEditorWorkspaceBase(
 void HierarchyEditorWorkspace::on_imgui_update() {
     ImGui::Begin(get_name().c_str(), &get_enabled());
 
-    ogl::Scene* active_scene = ogl::SceneManager::get()->get_active_scene();
+    ogl::Scene* active_scene = ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene();
     if (active_scene != nullptr) {
         ecs::Registry& registry = active_scene->get_registry();
         const std::vector<ecs::Entity>& entities = registry.get_entities();
@@ -92,7 +92,7 @@ void HierarchyEditorWorkspace::_create_shape(
 
     ogl::MeshRendererComponent* mesh_renderer = entity.add_component<ogl::MeshRendererComponent>();
     mesh_renderer->model =
-        ogl::AssetHandler::get()->load_model_into_memory(mesh_file_path, ogl::ModelFileType_Obj);
+        ogl::Application::get_layer<ogl::AssetHandler>()->load_model_into_memory(mesh_file_path, ogl::ModelFileType_Obj);
 
     if (parent != nullptr) {
         // TODO: Setup parent component
@@ -100,7 +100,7 @@ void HierarchyEditorWorkspace::_create_shape(
 }
 
 void HierarchyEditorWorkspace::_popup_menu(ogl::Entity* entity) {
-    ogl::Scene* scene = ogl::SceneManager::get()->get_active_scene();
+    ogl::Scene* scene = ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene();
 
     if (scene != nullptr) {
         if (ImGui::BeginMenu("New")) {

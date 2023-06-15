@@ -34,7 +34,7 @@ void DockingEditorWorkspace::on_imgui_update() {
 
     ImGuiID dock_space_id = ImGui::GetID("DockSpace");
     ImGui::DockSpace(dock_space_id, ImVec2(0.0f, 0.0f), m_dock_node_flags);
-    bool scene_loaded = ogl::SceneManager::get()->get_active_scene() != nullptr;
+    bool scene_loaded = ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene() != nullptr;
 
     bool open_project_popup = false;
 
@@ -99,9 +99,9 @@ void DockingEditorWorkspace::on_imgui_update() {
             }
 
             if (ImGui::MenuItem("Save As", "Ctrl+Shift+S", nullptr, scene_loaded)) {
-                if (ogl::Application::get()->get_layer<ogl::SceneManager>()->get_active_scene() !=
+                if (ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene() !=
                     nullptr) {
-                    Project* project = ogl::Application::get()->get_layer<Project>();
+                    Project* project = ogl::Application::get_layer<Project>();
                     std::string filename = pfd::save_file(
                                                "Create Scene", project->get_root_path(),
                                                {"Oniup Scene Files", "*.oscene"}

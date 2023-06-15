@@ -16,13 +16,15 @@ App::App() {
     );
 
     // Framebuffers
-    ogl::Pipeline::get()->get_window()->set_title("Oniup's Game Editor - No Project Selected");
-    ogl::Pipeline::get()->get_window()->set_size(ogl::WindowResolution_Maximize);
-    static_cast<ogl::BasicRenderer*>(ogl::Pipeline::get()->push_renderer(new ogl::BasicRenderer()))
+    ogl::Pipeline* pipeline = get_application_layer<ogl::Pipeline>();
+    ogl::Window* window = get_application_layer<ogl::Window>();
+    window->set_title("Oniup's Game Editor - No Project Selected");
+    window->set_size(ogl::WindowResolution_Maximize);
+    static_cast<ogl::BasicRenderer*>(pipeline->push_renderer(new ogl::BasicRenderer()))
         ->use_default_framebuffer(false);
 
     // Debug Logger
-    ogl::Debug* debug = get_layer<ogl::Debug>();
+    ogl::Debug* debug = get_application_layer<ogl::Debug>();
     debug->set_automatically_clear_on_update(false);
     debug->set_serialize(true);
 
@@ -34,9 +36,7 @@ App::App() {
     workspace->push_panels({
         new DockingEditorWorkspace(workspace),
         new ConsoleEditorWorkspace(debug),
-        new ViewportEditorWorkspace(
-            ogl::Pipeline::get()->create_framebuffer("editor viewport", 1280, 720)
-        ),
+        new ViewportEditorWorkspace(pipeline->create_framebuffer("editor viewport", 1280, 720)),
         new HierarchyEditorWorkspace(),
         new AssetsEditorWorkspace(),
     });
@@ -44,7 +44,7 @@ App::App() {
         static_cast<HierarchyEditorWorkspace*>(workspace->get_panel("Hierarchy"))
     );
 
-    get_layer<ogl::ReflectionRegistry>()->print_types_to_logs();
+    get_application_layer<ogl::ReflectionRegistry>()->print_types_to_logs();
 }
 
 } // namespace oge

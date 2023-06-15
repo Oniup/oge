@@ -38,7 +38,7 @@ EditorWorkspace::EditorWorkspace() {
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-    ImGui_ImplGlfw_InitForOpenGL(ogl::Pipeline::get()->get_window()->get_internal(), true);
+    ImGui_ImplGlfw_InitForOpenGL(ogl::Application::get_layer<ogl::Window>()->get_internal(), true);
     ImGui_ImplOpenGL3_Init("#version 450");
 
     // Settings Preferences

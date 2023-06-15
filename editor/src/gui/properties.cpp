@@ -155,7 +155,7 @@ class MeshRendererPropertyDefinition : public PropertyTypeDefinition<ogl::MeshRe
         if (ImGui::BeginPopup("Set Mesh Path")) {
             ImGui::InputText("Path", change_path_buffer, change_path_buffer_size);
             if (ImGui::Button("Set")) {
-                ogl::Model* model = ogl::AssetHandler::get()->load_model_into_memory(
+                ogl::Model* model = ogl::Application::get_layer<ogl::AssetHandler>()->load_model_into_memory(
                     change_path_buffer, ogl::ModelFileType_Obj
                 );
                 if (!mesh_renderer->is_static) {

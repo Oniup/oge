@@ -30,7 +30,7 @@ void ViewportEditorWorkspace::on_imgui_update() {
     {
         ImGui::PopStyleVar();
 
-        ogl::Scene* scene = ogl::SceneManager::get()->get_active_scene();
+        ogl::Scene* scene = ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene();
         ogl::CameraComponent* editor_camera = nullptr;
 
         if (scene != nullptr) {
@@ -63,10 +63,11 @@ void ViewportEditorWorkspace::on_imgui_update() {
 
                     if (window_size.x != m_framebuffer->size.x ||
                         window_size.y != m_framebuffer->size.y) {
-                        m_framebuffer = ogl::Pipeline::get()->recreate_framebuffer(
-                            m_framebuffer, static_cast<int>(window_size.x),
-                            static_cast<int>(window_size.y)
-                        );
+                        m_framebuffer =
+                            ogl::Application::get_layer<ogl::Pipeline>()->recreate_framebuffer(
+                                m_framebuffer, static_cast<int>(window_size.x),
+                                static_cast<int>(window_size.y)
+                            );
                         if (m_framebuffer == nullptr) {
                             ogl::Debug::log("Viewport::on_imgui_update() -> failed to resize "
                                             "framebuffer size");
@@ -165,7 +166,7 @@ void ViewportEditorWorkspace::_no_scene(
     ImGui::SetCursorPosY((window_height - text_size.y) * 0.5f);
 
     if (ImGui::Button("Create Empty Scene")) {
-        ogl::SceneManager::get()->set_active(ogl::SceneManager::get()->push("Empty Scene"));
+        ogl::Application::get_layer<ogl::SceneManager>()->set_active(ogl::Application::get_layer<ogl::SceneManager>()->push("Empty Scene"));
 
         // Create Editor Camera for new scene
         ogl::Entity entity = ogl::Entity(true);

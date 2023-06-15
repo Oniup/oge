@@ -13,9 +13,10 @@ Project* Project::m_Instance = nullptr;
 
 void Project::create_new_popup() {
     if (ImGui::BeginPopupModal("Create Project", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ogl::Window* window = ogl::Application::get_layer<ogl::Window>();
         ImVec2 window_size = ImVec2(
-            static_cast<float>(ogl::Pipeline::get()->get_window()->get_width()) * 0.2f,
-            static_cast<float>(ogl::Pipeline::get()->get_window()->get_height()) * 0.2f
+            static_cast<float>(window->get_width()) * 0.2f,
+            static_cast<float>(window->get_height()) * 0.2f
         );
 
         ImGui::BeginChild("Create Project Correct Size", window_size);
@@ -148,7 +149,9 @@ bool Project::create(
              << yaml::node("Scenes");
 
         if (yaml::write(root, m_project_filename)) {
-            ogl::Pipeline::get()->get_window()->set_title("Oniups Game Editor - " + m_name);
+            ogl::Application::get_layer<ogl::Window>()->set_title(
+                "Oniups Game Editor - " + m_name
+            );
 
             yaml::Node preferences = Preferences::get_preferences();
             yaml::Node& project_node = preferences["Project"];
@@ -188,7 +191,9 @@ bool Project::load(const std::string& project_filename) {
         m_root_path = std::string(project_filename.c_str(), project_filename.find_last_of('/'));
         m_unsaved = false;
 
-        ogl::Pipeline::get()->get_window()->set_title("Oniups Game Editor - " + m_name);
+        ogl::Application::get_layer<ogl::Window>()->set_title(
+            "Oniups Game Editor - " + m_name
+        );
 
         if (root["SceneCount"].as<std::size_t>() > 0) {
             // TODO: load scenes
@@ -203,8 +208,8 @@ void Project::serialize(const std::string& filename, bool use_scene_name) {
     yaml::Node project_node = yaml::open(m_project_filename);
     if (!project_node.empty()) {
         ogl::SerializableTypeHandler* handler =
-            ogl::Application::get()->get_layer<ogl::SerializableTypeHandler>();
-        ogl::SceneManager* scene_manager = ogl::Application::get()->get_layer<ogl::SceneManager>();
+            ogl::Application::get_layer<ogl::SerializableTypeHandler>();
+        ogl::SceneManager* scene_manager = ogl::Application::get_layer<ogl::SceneManager>();
 
         ogl::Scene* scene = scene_manager->get_active_scene();
         if (!use_scene_name) {
