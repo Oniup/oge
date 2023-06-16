@@ -59,7 +59,8 @@ class EditorWorkspace : public ogl::ApplicationLayer {
     virtual void on_update() override;
 
   private:
-    void _load_color_theme(yaml::Node& color);
+    void _load_colors(yaml::Node& color);
+    void _load_styles(yaml::Node& styles);
 
   private:
     std::vector<PanelEditorWorkspaceBase*> m_panels{};

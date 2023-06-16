@@ -85,7 +85,8 @@ EditorWorkspace::EditorWorkspace() {
     io.FontDefault =
         io.Fonts->AddFontFromFileTTF(ui["FontRegular"].as<std::string>().c_str(), 18.0f);
 
-    _load_color_theme(ui["ColorTheme"]);
+    _load_colors(ui["Theme"]);
+    _load_styles(ui["Style"]);
 }
 
 EditorWorkspace::~EditorWorkspace() {
@@ -152,27 +153,44 @@ void EditorWorkspace::on_update() {
     }
 }
 
-void EditorWorkspace::_load_color_theme(yaml::Node& ui_color) {
-    auto& colors = ImGui::GetStyle().Colors;
+void EditorWorkspace::_load_colors(yaml::Node& colors) {
+    auto& coloring = ImGui::GetStyle().Colors;
 
-    colors[ImGuiCol_WindowBg] = ui_color["WindowBg"].as<ImVec4>();
-    colors[ImGuiCol_Header] = ui_color["Header"].as<ImVec4>();
-    colors[ImGuiCol_HeaderHovered] = ui_color["HeaderHovered"].as<ImVec4>();
-    colors[ImGuiCol_HeaderActive] = ui_color["HeaderActive"].as<ImVec4>();
-    colors[ImGuiCol_Button] = ui_color["Button"].as<ImVec4>();
-    colors[ImGuiCol_ButtonHovered] = ui_color["ButtonHovered"].as<ImVec4>();
-    colors[ImGuiCol_ButtonActive] = ui_color["ButtonActive"].as<ImVec4>();
-    colors[ImGuiCol_FrameBg] = ui_color["FrameBg"].as<ImVec4>();
-    colors[ImGuiCol_FrameBgHovered] = ui_color["FrameBgHovered"].as<ImVec4>();
-    colors[ImGuiCol_FrameBgActive] = ui_color["FrameBgActive"].as<ImVec4>();
-    colors[ImGuiCol_Tab] = ui_color["Tab"].as<ImVec4>();
-    colors[ImGuiCol_TabHovered] = ui_color["TabHovered"].as<ImVec4>();
-    colors[ImGuiCol_TabActive] = ui_color["TabActive"].as<ImVec4>();
-    colors[ImGuiCol_TabUnfocused] = ui_color["TabUnfocused"].as<ImVec4>();
-    colors[ImGuiCol_TabUnfocusedActive] = ui_color["TabUnfocusedActive"].as<ImVec4>();
-    colors[ImGuiCol_TitleBg] = ui_color["TitleBg"].as<ImVec4>();
-    colors[ImGuiCol_TitleBgActive] = ui_color["TitleBgActive"].as<ImVec4>();
-    colors[ImGuiCol_TitleBgCollapsed] = ui_color["TitleBgCollapsed"].as<ImVec4>();
+    std::size_t i = 0;
+    for (yaml::Node& color : colors) {
+        coloring[i] = color.as<ImVec4>();
+        i++;
+    }
+}
+
+void EditorWorkspace::_load_styles(yaml::Node& styles) {
+    auto& styling = ImGui::GetStyle();
+
+    styling.WindowPadding = styles["WindowPadding"].as<ImVec2>();
+    styling.CellPadding = styles["CellPadding"].as<ImVec2>();
+    styling.ItemSpacing = styles["ItemSpacing"].as<ImVec2>();
+    styling.ScrollbarSize = styles["ScrollbarSize"].as<float>();
+    styling.GrabMinSize = styles["GrabMinSize"].as<float>();
+    styling.ItemSpacing = styles["ItemSpacing"].as<ImVec2>();
+    styling.WindowRounding = styles["WindowRounding"].as<float>();
+    styling.ChildRounding = styles["ChildRounding"].as<float>();
+    styling.FrameRounding = styles["FrameRounding"].as<float>();
+    styling.PopupRounding = styles["PopupRounding"].as<float>();
+    styling.ScrollbarRounding = styles["ScrollbarRounding"].as<float>();
+    styling.TabRounding = styles["TabRounding"].as<float>();
+
+    int window_menu_button_position = styles["WindowMenuButtonPosition"].as<int>();
+    switch (window_menu_button_position) {
+    case 0:
+        styling.WindowMenuButtonPosition = ImGuiDir_None;
+        break;
+    case 1:
+        styling.WindowMenuButtonPosition = ImGuiDir_Left;
+        break;
+    case 2:
+        styling.WindowMenuButtonPosition = ImGuiDir_Right;
+        break;
+    }
 }
 
 /******************************************************************************/
