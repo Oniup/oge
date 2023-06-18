@@ -7,8 +7,10 @@
 
 namespace oge {
 
-struct ImGuiHelper {
-    static ImVec2 calc_button_size(const std::string& label = "") {
+struct ImGuiHelper
+{
+    static ImVec2 calc_button_size(const std::string& label = "")
+    {
         ImVec2 label_size = ImGui::CalcTextSize(label.c_str());
 
         return ImGui::CalcItemSize(

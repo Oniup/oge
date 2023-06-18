@@ -8,7 +8,8 @@
 namespace oge {
 
 DockingEditorWorkspace::DockingEditorWorkspace(EditorWorkspace* workspace)
-    : PanelEditorWorkspaceBase("Docking") {
+    : PanelEditorWorkspaceBase("Docking")
+{
     m_dock_node_flags = ImGuiDockNodeFlags_None;
 
     m_window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
@@ -20,7 +21,8 @@ DockingEditorWorkspace::DockingEditorWorkspace(EditorWorkspace* workspace)
     get_enabled() = true;
 }
 
-void DockingEditorWorkspace::on_imgui_update() {
+void DockingEditorWorkspace::on_imgui_update()
+{
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -34,55 +36,65 @@ void DockingEditorWorkspace::on_imgui_update() {
 
     ImGuiID dock_space_id = ImGui::GetID("DockSpace");
     ImGui::DockSpace(dock_space_id, ImVec2(0.0f, 0.0f), m_dock_node_flags);
-    bool scene_loaded = ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene() != nullptr;
+    bool scene_loaded =
+        ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene() != nullptr;
 
     bool open_project_popup = false;
 
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-            if (ImGui::BeginMenu("New")) {
-                if (ImGui::MenuItem("Project")) {
+    if (ImGui::BeginMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::BeginMenu("New"))
+            {
+                if (ImGui::MenuItem("Project"))
                     open_project_popup = true;
-                }
 
-                if (ImGui::MenuItem("Scene")) {
+                if (ImGui::MenuItem("Scene"))
+                {
                 }
 
                 ImGui::EndMenu();
             }
 
-            if (ImGui::MenuItem("Open", "Ctrl+O")) {
+            if (ImGui::MenuItem("Open", "Ctrl+O"))
+            {
                 std::vector<std::string> files =
                     pfd::open_file(
                         "Open Project", pfd::path::home(),
                         {"Oniups Game Engine Project File (.oproject)", "*.oproject"}
                     )
                         .result();
-                if (files.size() > 0) {
+                if (files.size() > 0)
                     Project::get()->load(files[0]);
-                }
             }
 
-            if (ImGui::BeginMenu("Open Recents")) {
+            if (ImGui::BeginMenu("Open Recents"))
+            {
                 yaml::Node preferences = Preferences::get_preferences();
                 yaml::Node& project_node = preferences["Project"];
                 std::vector<std::string> recently_opened =
                     project_node["RecentlyOpened"].as<std::vector<std::string>>();
 
-                if (recently_opened.size() > 0) {
+                if (recently_opened.size() > 0)
+                {
                     std::size_t last_size = recently_opened.size();
 
                     // Printing project select and remove button
-                    for (std::size_t i = 0; i < recently_opened.size(); i++) {
+                    for (std::size_t i = 0; i < recently_opened.size(); i++)
+                    {
                         yaml::Node project_config = yaml::open(recently_opened[i]);
-                        if (project_config.empty()) {
+                        if (project_config.empty())
+                        {
                             recently_opened.erase(recently_opened.begin() + i);
                             continue;
                         }
 
                         if (ImGui::MenuItem(project_config["ProjectName"].as<std::string>().c_str()
-                            )) {
-                            if (!Project::get()->load(recently_opened[i])) {
+                            ))
+                        {
+                            if (!Project::get()->load(recently_opened[i]))
+                            {
                                 recently_opened.erase(recently_opened.begin() + i);
                                 project_node["RecentlyOpened"] = recently_opened;
                                 preferences.write_file(Preferences::get_preferences_path());
@@ -94,48 +106,49 @@ void DockingEditorWorkspace::on_imgui_update() {
                 ImGui::EndMenu();
             }
 
-            if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, scene_loaded)) {
+            if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, scene_loaded))
                 ogl::Debug::log("Not Implemented yet", ogl::DebugType_Warning);
-            }
 
-            if (ImGui::MenuItem("Save As", "Ctrl+Shift+S", nullptr, scene_loaded)) {
-                if (ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene() !=
-                    nullptr) {
+            if (ImGui::MenuItem("Save As", "Ctrl+Shift+S", nullptr, scene_loaded))
+            {
+                if (ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene() != nullptr)
+                {
                     Project* project = ogl::Application::get_layer<Project>();
                     std::string filename = pfd::save_file(
                                                "Create Scene", project->get_root_path(),
                                                {"Oniup Scene Files", "*.oscene"}
                     )
                                                .result();
-                    if (filename.size() > 0) {
+                    if (filename.size() > 0)
                         project->serialize(filename, false);
-                    }
                 }
             }
 
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("View")) {
-            if (ImGui::BeginMenu("Workspace")) {
+        if (ImGui::BeginMenu("View"))
+        {
+            if (ImGui::BeginMenu("Workspace"))
+            {
                 const std::vector<PanelEditorWorkspaceBase*>& panels =
                     m_workspace->get_all_panels();
 
-                for (PanelEditorWorkspaceBase* panel : panels) {
-                    if (panel->get_name() != get_name()) {
+                for (PanelEditorWorkspaceBase* panel : panels)
+                {
+                    if (panel->get_name() != get_name())
                         ImGui::MenuItem(panel->get_name().c_str(), nullptr, &panel->get_enabled());
-                    }
                 }
 
                 ImGui::EndMenu();
             }
 
-            if (ImGui::MenuItem("Preferences")) {
-                if (m_workspace->get_panel("Preferences") == nullptr) {
+            if (ImGui::MenuItem("Preferences"))
+            {
+                if (m_workspace->get_panel("Preferences") == nullptr)
                     ogl::Debug::log(
                         "Preference settings are coming soon ...", ogl::DebugType_Warning
                     );
-                }
             }
 
             ImGui::EndMenu();
@@ -143,9 +156,8 @@ void DockingEditorWorkspace::on_imgui_update() {
         ImGui::EndMenuBar();
     }
 
-    if (open_project_popup) {
+    if (open_project_popup)
         ImGui::OpenPopup("Create Project");
-    }
     Project::create_new_popup();
 
     ImGui::End();

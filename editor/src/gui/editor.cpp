@@ -12,18 +12,21 @@
 
 namespace oge {
 
-enum ConsoleFileReadingStage {
+enum ConsoleFileReadingStage
+{
     ConsoleFileReadingStage_Type,
     ConsoleFileReadingStage_TimeRecorded,
     ConsoleFileReadingStage_Message
 };
 
-PanelEditorWorkspaceBase::PanelEditorWorkspaceBase(const std::string& name) : m_name(name) {
+PanelEditorWorkspaceBase::PanelEditorWorkspaceBase(const std::string& name) : m_name(name)
+{
     m_io = &ImGui::GetIO();
     static_cast<void>(*m_io);
 }
 
-EditorWorkspace::EditorWorkspace() {
+EditorWorkspace::EditorWorkspace()
+{
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -33,7 +36,8 @@ EditorWorkspace::EditorWorkspace() {
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
@@ -44,7 +48,8 @@ EditorWorkspace::EditorWorkspace() {
     // Settings Preferences
 
     std::string settings_path = pfd::path::home() + "/.config/oge";
-    if (!std::filesystem::exists(settings_path)) {
+    if (!std::filesystem::exists(settings_path))
+    {
         std::filesystem::create_directory(settings_path);
 
         // Create preference config file and its default for backup
@@ -71,15 +76,15 @@ EditorWorkspace::EditorWorkspace() {
     yaml::Node preferences = yaml::open(path);
     yaml::Node& ui = preferences["EditorUI"];
 
-    if (ui["ResetLayoutOnLoad"].as<bool>()) {
+    if (ui["ResetLayoutOnLoad"].as<bool>())
+    {
         std::remove("imgui.ini");
 
         std::string default_layout = ui["Layout"].as<std::string>();
         if (!std::filesystem::copy_file(
                 settings_path + "/layouts/" + default_layout + ".ini", "imgui.ini"
-            )) {
+            ))
             ogl::Debug::log("Failed to load editor layout", ogl::DebugType_Error);
-        }
     }
 
     io.FontDefault =
@@ -89,8 +94,10 @@ EditorWorkspace::EditorWorkspace() {
     _load_styles(ui["Style"]);
 }
 
-EditorWorkspace::~EditorWorkspace() {
-    for (PanelEditorWorkspaceBase* panel : m_panels) {
+EditorWorkspace::~EditorWorkspace()
+{
+    for (PanelEditorWorkspaceBase* panel : m_panels)
+    {
         delete panel;
     }
 
@@ -99,9 +106,12 @@ EditorWorkspace::~EditorWorkspace() {
     ImGui::DestroyContext();
 }
 
-PanelEditorWorkspaceBase* EditorWorkspace::get_panel(const std::string& name) {
-    for (PanelEditorWorkspaceBase* panel : m_panels) {
-        if (panel->get_name() == name) {
+PanelEditorWorkspaceBase* EditorWorkspace::get_panel(const std::string& name)
+{
+    for (PanelEditorWorkspaceBase* panel : m_panels)
+    {
+        if (panel->get_name() == name)
+        {
             return panel;
         }
     }
@@ -109,9 +119,12 @@ PanelEditorWorkspaceBase* EditorWorkspace::get_panel(const std::string& name) {
     return nullptr;
 }
 
-void EditorWorkspace::remove_panel(const std::string& name) {
-    for (std::size_t i = 0; i < m_panels.size(); i++) {
-        if (m_panels[i]->get_name() == name) {
+void EditorWorkspace::remove_panel(const std::string& name)
+{
+    for (std::size_t i = 0; i < m_panels.size(); i++)
+    {
+        if (m_panels[i]->get_name() == name)
+        {
             delete m_panels[i];
             m_panels.erase(m_panels.begin() + i);
             return;
@@ -119,25 +132,27 @@ void EditorWorkspace::remove_panel(const std::string& name) {
     }
 }
 
-void EditorWorkspace::push_panels(std::initializer_list<PanelEditorWorkspaceBase*> panels) {
-    for (PanelEditorWorkspaceBase* panel : panels) {
+void EditorWorkspace::push_panels(std::initializer_list<PanelEditorWorkspaceBase*> panels)
+{
+    for (PanelEditorWorkspaceBase* panel : panels)
         m_panels.push_back(panel);
-    }
 }
 
-void EditorWorkspace::on_update() {
+void EditorWorkspace::on_update()
+{
     ImGui_ImplGlfw_NewFrame();
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
 
-    for (PanelEditorWorkspaceBase* panel : m_panels) {
-        if (!panel->get_enabled()) {
-            if (panel->get_remove_when_disabled()) {
+    for (PanelEditorWorkspaceBase* panel : m_panels)
+    {
+        if (!panel->get_enabled())
+        {
+            if (panel->get_remove_when_disabled())
                 remove_panel(panel->get_name());
-            }
-        } else {
-            panel->on_imgui_update();
         }
+        else
+            panel->on_imgui_update();
     }
 
     ImGui::Render();
@@ -145,7 +160,8 @@ void EditorWorkspace::on_update() {
 
     static ImGuiIO& io = ImGui::GetIO();
     (void)io;
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
         GLFWwindow* backup_context = glfwGetCurrentContext();
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
@@ -153,17 +169,20 @@ void EditorWorkspace::on_update() {
     }
 }
 
-void EditorWorkspace::_load_colors(yaml::Node& colors) {
+void EditorWorkspace::_load_colors(yaml::Node& colors)
+{
     auto& coloring = ImGui::GetStyle().Colors;
 
     std::size_t i = 0;
-    for (yaml::Node& color : colors) {
+    for (yaml::Node& color : colors)
+    {
         coloring[i] = color.as<ImVec4>();
         i++;
     }
 }
 
-void EditorWorkspace::_load_styles(yaml::Node& styles) {
+void EditorWorkspace::_load_styles(yaml::Node& styles)
+{
     auto& styling = ImGui::GetStyle();
 
     styling.WindowPadding = styles["WindowPadding"].as<ImVec2>();
@@ -180,7 +199,8 @@ void EditorWorkspace::_load_styles(yaml::Node& styles) {
     styling.TabRounding = styles["TabRounding"].as<float>();
 
     int window_menu_button_position = styles["WindowMenuButtonPosition"].as<int>();
-    switch (window_menu_button_position) {
+    switch (window_menu_button_position)
+    {
     case 0:
         styling.WindowMenuButtonPosition = ImGuiDir_None;
         break;
@@ -198,9 +218,11 @@ void EditorWorkspace::_load_styles(yaml::Node& styles) {
 /******************************************************************************/
 
 ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
-    : PanelEditorWorkspaceBase("Console") {
+    : PanelEditorWorkspaceBase("Console")
+{
     std::string names[] = {"Messages", "Warnings", "Errors", "Fatal Errors", "Inits", "Terminate"};
-    for (std::size_t i = 0; i < ogl::debug_type_count; i++) {
+    for (std::size_t i = 0; i < ogl::debug_type_count; i++)
+    {
         std::get<bool>(m_filters[i]) = true;
         std::get<std::string>(m_filters[i]) = std::move(names[i]);
     }
@@ -217,39 +239,45 @@ ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
     m_debug = debug;
 }
 
-void ConsoleEditorWorkspace::on_imgui_update() {
+void ConsoleEditorWorkspace::on_imgui_update()
+{
     ImGui::Begin(get_name().c_str(), &get_enabled(), ImGuiWindowFlags_MenuBar);
 
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Options")) {
-            if (ImGui::BeginMenu("Filter")) {
-                for (std::tuple<bool, std::string>& filter : m_filters) {
+    if (ImGui::BeginMenuBar())
+    {
+        if (ImGui::BeginMenu("Options"))
+        {
+            if (ImGui::BeginMenu("Filter"))
+            {
+                for (std::tuple<bool, std::string>& filter : m_filters)
                     ImGui::MenuItem(
                         std::get<std::string>(filter).c_str(), nullptr, &std::get<bool>(filter)
                     );
-                }
                 ImGui::EndMenu();
             }
             ImGui::MenuItem("Auto-Scrolling", nullptr, &m_auto_scrolling);
-            if (ImGui::MenuItem("Log Tests")) {
+            if (ImGui::MenuItem("Log Tests"))
+            {
                 ogl::Debug::log("Test Message");
                 ogl::Debug::log("Test Warning Message", ogl::DebugType_Warning);
                 ogl::Debug::log("Test Error Message", ogl::DebugType_Error);
             }
             ImGui::EndMenu();
         }
-        if (ImGui::MenuItem("Clear")) {
+        if (ImGui::MenuItem("Clear"))
             m_debug->clear_logs();
-        }
         ImGui::EndMenuBar();
     }
 
     ImGui::PushFont(m_font);
 
-    for (const std::tuple<ogl::DebugType, std::string, float>& log : m_debug->get_logs()) {
-        if (std::get<bool>(m_filters[static_cast<std::size_t>(std::get<ogl::DebugType>(log))])) {
+    for (const std::tuple<ogl::DebugType, std::string, float>& log : m_debug->get_logs())
+    {
+        if (std::get<bool>(m_filters[static_cast<std::size_t>(std::get<ogl::DebugType>(log))]))
+        {
             std::string prefix{};
-            switch (std::get<ogl::DebugType>(log)) {
+            switch (std::get<ogl::DebugType>(log))
+            {
             case ogl::DebugType_Warning:
                 prefix = "[Warning (" + std::to_string(std::get<float>(log)) + ")]: ";
                 ImGui::PushStyleColor(
@@ -275,15 +303,13 @@ void ConsoleEditorWorkspace::on_imgui_update() {
             }
 
             ImGui::TextWrapped("%s", std::string(prefix + std::get<std::string>(log)).c_str());
-            if (std::get<ogl::DebugType>(log) != ogl::DebugType_Message) {
+            if (std::get<ogl::DebugType>(log) != ogl::DebugType_Message)
                 ImGui::PopStyleColor();
-            }
         }
     }
 
-    if (m_auto_scrolling && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+    if (m_auto_scrolling && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
         ImGui::SetScrollHereY(1.0f);
-    }
 
     ImGui::PopFont();
 
@@ -292,7 +318,8 @@ void ConsoleEditorWorkspace::on_imgui_update() {
 
 AssetsEditorWorkspace::AssetsEditorWorkspace() : PanelEditorWorkspaceBase("Assets") {}
 
-void AssetsEditorWorkspace::on_imgui_update() {
+void AssetsEditorWorkspace::on_imgui_update()
+{
     ImGui::Begin(get_name().c_str(), &get_enabled());
     ImGui::End();
 }

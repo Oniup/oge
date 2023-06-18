@@ -5,7 +5,8 @@
 
 namespace oge {
 
-class Project : public ogl::ApplicationLayer {
+class Project : public ogl::ApplicationLayer
+{
   public:
     inline static Project* get() { return m_Instance; }
     static void create_new_popup();

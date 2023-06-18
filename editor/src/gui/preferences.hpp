@@ -9,9 +9,11 @@
 namespace oge {
 
 // TODO: Implement Preferences Editor window
-class Preferences {
+class Preferences
+{
   public:
-    inline static const std::string get_preferences_path() {
+    inline static const std::string get_preferences_path()
+    {
 #ifndef _WIN32
         return pfd::path::home() + "/.config/oge/preferences.yaml";
 #else

@@ -11,8 +11,10 @@ namespace oge {
 
 Project* Project::m_Instance = nullptr;
 
-void Project::create_new_popup() {
-    if (ImGui::BeginPopupModal("Create Project", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+void Project::create_new_popup()
+{
+    if (ImGui::BeginPopupModal("Create Project", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
         ogl::Window* window = ogl::Application::get_layer<ogl::Window>();
         ImVec2 window_size = ImVec2(
             static_cast<float>(window->get_width()) * 0.2f,
@@ -27,7 +29,8 @@ void Project::create_new_popup() {
             static std::string error_message = "";
             ImVec2 error_message_size = ImVec2();
 
-            if (error_message.size() > 0) {
+            if (error_message.size() > 0)
+            {
                 error_message_size = ImGui::CalcTextSize(error_message.c_str());
                 ImGui::SetCursorPosX(
                     (ImGui::GetContentRegionAvail().x - error_message_size.x) * 0.5f
@@ -62,7 +65,8 @@ void Project::create_new_popup() {
                 ImGui::PopItemWidth();
                 ImGui::SameLine();
 
-                if (ImGui::Button("...")) {
+                if (ImGui::Button("..."))
+                {
                     const std::string& directory =
                         pfd::select_folder("New Project Location", pfd::path::home()).result();
                     strncpy(FolderLocation, directory.c_str(), directory.size());
@@ -70,24 +74,26 @@ void Project::create_new_popup() {
 
                 ImGui::Checkbox("###3DBased", &Is3DBased);
 
-                if (error_message.size() > 0) {
+                if (error_message.size() > 0)
+                {
                     ImGui::SetCursorPosY(
                         window_size.y - (ImGuiHelper::calc_button_size().y + error_message_size.y +
                                          ImGui::GetStyle().FramePadding.y * 2)
                     );
-                } else {
-                    ImGui::SetCursorPosY(window_size.y - ImGuiHelper::calc_button_size().y);
                 }
+                else
+                    ImGui::SetCursorPosY(window_size.y - ImGuiHelper::calc_button_size().y);
 
-                if (ImGui::Button(
-                        "Create", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0.0f)
-                    )) {
+                if (ImGui::Button("Create", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0.0f)))
+                {
                     if (std::string(ProjectName).size() > 0 &&
-                        std::string(FolderLocation).size() > 0) {
+                        std::string(FolderLocation).size() > 0)
+                    {
 
-                        if (Project::get()->create(ProjectName, FolderLocation, Is3DBased)) {
+                        if (Project::get()->create(ProjectName, FolderLocation, Is3DBased))
                             ImGui::CloseCurrentPopup();
-                        } else {
+                        else
+                        {
                             ProjectName[0] = '\0';
                             FolderLocation[0] = '\0';
                             Is3DBased = true;
@@ -95,15 +101,15 @@ void Project::create_new_popup() {
                             error_message = std::string("Error. Could not create project ") +
                                             ProjectName + " at " + FolderLocation;
                         }
-
-                    } else {
-                        error_message = "Invalid project details, must fill every field in";
                     }
+                    else
+                        error_message = "Invalid project details, must fill every field in";
                 }
 
                 ImGui::SameLine();
 
-                if (ImGui::Button("Cancel", ImVec2(ImGui::GetContentRegionAvail().x, 0.0f))) {
+                if (ImGui::Button("Cancel", ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
+                {
                     ProjectName[0] = '\0';
                     FolderLocation[0] = '\0';
                     Is3DBased = true;
@@ -119,7 +125,8 @@ void Project::create_new_popup() {
     }
 }
 
-Project::Project() {
+Project::Project()
+{
     assert(
         m_Instance == nullptr && "Project::Project() -> cannot created multiple project "
                                  "application layers"
@@ -130,28 +137,32 @@ Project::Project() {
 
 bool Project::create(
     const std::string& name, const std::string& project_root_path, bool is_3d_based
-) {
+)
+{
     m_name = name;
     m_root_path = project_root_path;
     m_3d_based = is_3d_based;
-    if (project_root_path[project_root_path.size() - 1] == '/') {
-        m_root_path += m_name + "/";
 
+    if (project_root_path[project_root_path.size() - 1] == '/')
+    {
+        m_root_path += m_name + "/";
         m_project_filename = m_root_path + m_name + ".oproject";
-    } else {
+    }
+    else
+    {
         m_root_path += "/" + m_name + "/";
         m_project_filename = m_root_path + m_name + ".oproject";
     }
 
-    if (std::filesystem::create_directory(m_root_path)) {
+    if (std::filesystem::create_directory(m_root_path))
+    {
         yaml::Node root = {};
         root << yaml::node("ProjectName", m_name) << yaml::node("SceneCount", 0)
              << yaml::node("Scenes");
 
-        if (yaml::write(root, m_project_filename)) {
-            ogl::Application::get_layer<ogl::Window>()->set_title(
-                "Oniups Game Editor - " + m_name
-            );
+        if (yaml::write(root, m_project_filename))
+        {
+            ogl::Application::get_layer<ogl::Window>()->set_title("Oniups Game Editor - " + m_name);
 
             yaml::Node preferences = Preferences::get_preferences();
             yaml::Node& project_node = preferences["Project"];
@@ -162,19 +173,19 @@ bool Project::create(
             preferences.write_file(Preferences::get_preferences_path());
 
             return true;
-        } else {
+        }
+        else
             ogl::Debug::log(
                 "Failed to create project: cannot write project yaml file to '" +
                     m_project_filename = "'",
                 ogl::DebugType_Error
             );
-        }
-    } else {
+    }
+    else
         ogl::Debug::log(
             "Failed to create project: cannot create directory '" + m_root_path + "'",
             ogl::DebugType_Error
         );
-    }
 
     m_name.clear();
     m_root_path.clear();
@@ -183,36 +194,38 @@ bool Project::create(
     return false;
 }
 
-bool Project::load(const std::string& project_filename) {
+bool Project::load(const std::string& project_filename)
+{
     yaml::Node root = yaml::open(project_filename);
-    if (!root.empty()) {
+    if (!root.empty())
+    {
         m_name = root["ProjectName"].as<std::string>();
         m_project_filename = project_filename;
         m_root_path = std::string(project_filename.c_str(), project_filename.find_last_of('/'));
         m_unsaved = false;
 
-        ogl::Application::get_layer<ogl::Window>()->set_title(
-            "Oniups Game Editor - " + m_name
-        );
+        ogl::Application::get_layer<ogl::Window>()->set_title("Oniups Game Editor - " + m_name);
 
-        if (root["SceneCount"].as<std::size_t>() > 0) {
+        if (root["SceneCount"].as<std::size_t>() > 0)
             // TODO: load scenes
-        }
 
-        return true;
+            return true;
     }
     return false;
 }
 
-void Project::serialize(const std::string& filename, bool use_scene_name) {
+void Project::serialize(const std::string& filename, bool use_scene_name)
+{
     yaml::Node project_node = yaml::open(m_project_filename);
-    if (!project_node.empty()) {
+    if (!project_node.empty())
+    {
         ogl::SerializableTypeHandler* handler =
             ogl::Application::get_layer<ogl::SerializableTypeHandler>();
         ogl::SceneManager* scene_manager = ogl::Application::get_layer<ogl::SceneManager>();
 
         ogl::Scene* scene = scene_manager->get_active_scene();
-        if (!use_scene_name) {
+        if (!use_scene_name)
+        {
             std::size_t name_offset = filename.find_last_of('/') + 1;
             std::size_t scene_name_size = filename.find_last_of('.') - name_offset;
             std::string scene_name = std::string(filename.c_str() + name_offset, scene_name_size);
@@ -230,9 +243,9 @@ void Project::serialize(const std::string& filename, bool use_scene_name) {
         project_node["SceneCount"] = scenes_count + 1;
 
         project_node.write_file(m_project_filename);
-    } else {
-        ogl::Debug::log("Cannot serialize scene, cannot open Project file", ogl::DebugType_Error);
     }
+    else
+        ogl::Debug::log("Cannot serialize scene, cannot open Project file", ogl::DebugType_Error);
 }
 
 void Project::deserialize(ogl::Scene* scene, const std::string& filename) {}

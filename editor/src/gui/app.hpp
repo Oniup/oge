@@ -5,7 +5,8 @@
 
 namespace oge {
 
-class App : public ogl::Application {
+class App : public ogl::Application
+{
   public:
     App();
     virtual ~App() override = default;

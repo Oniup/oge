@@ -10,7 +10,8 @@ namespace oge {
 
 typedef void (*fnptr_imgui_draw_comp)(const std::string& fieldname, void* ptr);
 
-class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase {
+class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase
+{
   public:
     PropertiesEditorWorkspace(HierarchyEditorWorkspace* hierarchy);
     virtual ~PropertiesEditorWorkspace() override = default;

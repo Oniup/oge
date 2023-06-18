@@ -10,21 +10,21 @@
 namespace oge {
 
 ViewportEditorWorkspace::ViewportEditorWorkspace(ogl::Framebuffer* framebuffer)
-    : PanelEditorWorkspaceBase("Viewport") {
-    if (framebuffer != nullptr) {
+    : PanelEditorWorkspaceBase("Viewport")
+{
+    if (framebuffer != nullptr)
         m_framebuffer = framebuffer;
-    } else {
+    else
         ogl::Debug::log("Viewport::Viewport(ogl::Framebuffer*) -> failed to create "
                         "viewport as framebuffer is nullptr");
-    }
 }
 
-void ViewportEditorWorkspace::on_imgui_update() {
+void ViewportEditorWorkspace::on_imgui_update()
+{
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     int window_flags = ImGuiWindowFlags_NoScrollbar;
-    if (Project::get()->unsaved()) {
+    if (Project::get()->unsaved())
         window_flags |= ImGuiWindowFlags_UnsavedDocument;
-    }
 
     ImGui::Begin(get_name().c_str(), &get_enabled(), window_flags);
     {
@@ -33,42 +33,51 @@ void ViewportEditorWorkspace::on_imgui_update() {
         ogl::Scene* scene = ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene();
         ogl::CameraComponent* editor_camera = nullptr;
 
-        if (scene != nullptr) {
+        if (scene != nullptr)
+        {
             auto view = ecs::View<ogl::CameraComponent, ogl::TagComponent>(&scene->get_registry());
-            for (ecs::Entity entity : view) {
-                if (view.has_required(entity)) {
+            for (ecs::Entity entity : view)
+            {
+                if (view.has_required(entity))
+                {
                     auto [camera, tag] = view.get();
-                    if (std::string(tag->tag) == HIERARCHY_FILTER_NAME) {
+                    if (std::string(tag->tag) == HIERARCHY_FILTER_NAME)
+                    {
                         editor_camera = camera;
                         break;
                     }
                 }
             }
-        } else {
+        }
+        else
+        {
             ImVec2 window_size = ImGui::GetWindowSize();
 
-            if (Project::get()->opened()) {
+            if (Project::get()->opened())
                 _no_scene(editor_camera, window_size.x, window_size.y);
-            } else {
+            else
                 _no_project();
-            }
         }
 
-        if (editor_camera != nullptr) {
+        if (editor_camera != nullptr)
+        {
             _camera_controller(editor_camera);
             ImGui::BeginChild(1);
             {
-                if (m_framebuffer != nullptr) {
+                if (m_framebuffer != nullptr)
+                {
                     ImVec2 window_size = ImGui::GetWindowSize();
 
                     if (window_size.x != m_framebuffer->size.x ||
-                        window_size.y != m_framebuffer->size.y) {
+                        window_size.y != m_framebuffer->size.y)
+                    {
                         m_framebuffer =
                             ogl::Application::get_layer<ogl::Pipeline>()->recreate_framebuffer(
                                 m_framebuffer, static_cast<int>(window_size.x),
                                 static_cast<int>(window_size.y)
                             );
-                        if (m_framebuffer == nullptr) {
+                        if (m_framebuffer == nullptr)
+                        {
                             ogl::Debug::log("Viewport::on_imgui_update() -> failed to resize "
                                             "framebuffer size");
                             return;
@@ -84,9 +93,9 @@ void ViewportEditorWorkspace::on_imgui_update() {
                         ),
                         ImVec2(1, 1), ImVec2(0, 0)
                     );
-                } else {
-                    ImGui::Text("No Framebuffer Allocated");
                 }
+                else
+                    ImGui::Text("No Framebuffer Allocated");
             }
             ImGui::EndChild();
         }
@@ -95,49 +104,46 @@ void ViewportEditorWorkspace::on_imgui_update() {
     ImGui::End();
 }
 
-void ViewportEditorWorkspace::_camera_controller(ogl::CameraComponent* camera) {
+void ViewportEditorWorkspace::_camera_controller(ogl::CameraComponent* camera)
+{
     glm::vec2 mouse_position = ogl::Input::get_mouse_position();
     static glm::vec2 last_mouse_position = mouse_position;
 
-    if (camera != nullptr) {
-        if (ogl::Input::pressed_key(ogl::InputKeyCode_LeftShift)) {
-            if (ogl::Input::pressed_mousebutton(ogl::InputMouseButton_Right)) {
+    if (camera != nullptr)
+    {
+        if (ogl::Input::pressed_key(ogl::InputKeyCode_LeftShift))
+        {
+            if (ogl::Input::pressed_mousebutton(ogl::InputMouseButton_Right))
+            {
                 constexpr float increase_speed = 0.3f;
                 m_camera_move_speed = m_camera_move_speed +
                                       (increase_speed * ogl::Input::get_mouse_scroll_direction());
-                if (m_camera_move_speed < 0.0f) {
+                if (m_camera_move_speed < 0.0f)
                     m_camera_move_speed = 0.0f;
-                }
 
-                if (ogl::Input::pressed_key(ogl::InputKeyCode_S)) {
+                if (ogl::Input::pressed_key(ogl::InputKeyCode_S))
                     camera->position -=
                         m_camera_move_speed * camera->forward * ogl::Time::get_delta();
-                }
 
-                if (ogl::Input::pressed_key(ogl::InputKeyCode_W)) {
+                if (ogl::Input::pressed_key(ogl::InputKeyCode_W))
                     camera->position +=
                         m_camera_move_speed * camera->forward * ogl::Time::get_delta();
-                }
 
-                if (ogl::Input::pressed_key(ogl::InputKeyCode_D)) {
+                if (ogl::Input::pressed_key(ogl::InputKeyCode_D))
                     camera->position -= m_camera_move_speed *
                                         glm::cross(camera->forward, camera->up) *
                                         ogl::Time::get_delta();
-                }
 
-                if (ogl::Input::pressed_key(ogl::InputKeyCode_A)) {
+                if (ogl::Input::pressed_key(ogl::InputKeyCode_A))
                     camera->position += m_camera_move_speed *
                                         glm::cross(camera->forward, camera->up) *
                                         ogl::Time::get_delta();
-                }
 
-                if (ogl::Input::pressed_key(ogl::InputKeyCode_Q)) {
+                if (ogl::Input::pressed_key(ogl::InputKeyCode_Q))
                     camera->position.y -= m_camera_move_speed * ogl::Time::get_delta();
-                }
 
-                if (ogl::Input::pressed_key(ogl::InputKeyCode_E)) {
+                if (ogl::Input::pressed_key(ogl::InputKeyCode_E))
                     camera->position.y += m_camera_move_speed * ogl::Time::get_delta();
-                }
                 glm::vec2 mouse_movement = last_mouse_position - mouse_position;
 
                 mouse_movement *= 0.05f;
@@ -160,13 +166,17 @@ void ViewportEditorWorkspace::_camera_controller(ogl::CameraComponent* camera) {
 
 void ViewportEditorWorkspace::_no_scene(
     ogl::CameraComponent* editor_camera, float window_width, float window_height
-) {
+)
+{
     ImVec2 text_size = ImGui::CalcTextSize("Create Empty Scene");
     ImGui::SetCursorPosX((window_width - text_size.x) * 0.5f);
     ImGui::SetCursorPosY((window_height - text_size.y) * 0.5f);
 
-    if (ImGui::Button("Create Empty Scene")) {
-        ogl::Application::get_layer<ogl::SceneManager>()->set_active(ogl::Application::get_layer<ogl::SceneManager>()->push("Empty Scene"));
+    if (ImGui::Button("Create Empty Scene"))
+    {
+        ogl::Application::get_layer<ogl::SceneManager>()->set_active(
+            ogl::Application::get_layer<ogl::SceneManager>()->push("Empty Scene")
+        );
 
         // Create Editor Camera for new scene
         ogl::Entity entity = ogl::Entity(true);
@@ -181,7 +191,8 @@ void ViewportEditorWorkspace::_no_scene(
     }
 }
 
-void ViewportEditorWorkspace::_no_project() {
+void ViewportEditorWorkspace::_no_project()
+{
     ImVec2 available_space = ImGui::GetContentRegionAvail();
     ImVec2 child_window_size = ImVec2(available_space.x * 0.5f, available_space.y * 0.5f);
     ImGui::SetCursorPosX((available_space.x - child_window_size.x) * 0.5f);
@@ -197,21 +208,23 @@ void ViewportEditorWorkspace::_no_project() {
             // Calc button offset so it is centered
             ImGui::SetCursorPosY((child_window_size.y - button_height * 3.0f) * 0.5f);
 
-            if (ImGui::Button("Create New Project", ImVec2(button_width, 0.0f))) {
+            if (ImGui::Button("Create New Project", ImVec2(button_width, 0.0f)))
                 ImGui::OpenPopup("Create Project");
-            }
 
             Project::create_new_popup();
 
-            if (ImGui::Button("Open Project", ImVec2(button_width, 0.0f))) {
+            if (ImGui::Button("Open Project", ImVec2(button_width, 0.0f)))
+            {
                 std::vector<std::string> files =
                     pfd::open_file(
                         "Open Project", pfd::path::home(),
                         {"Oniups Game Engine Project File (.oproject)", "*.oproject"}
                     )
                         .result();
-                if (files.size() > 0) {
-                    if (Project::get()->load(files[0])) {
+                if (files.size() > 0)
+                {
+                    if (Project::get()->load(files[0]))
+                    {
                         // Update preferences config
                         yaml::Node project_config = yaml::open(files[0]);
                         yaml::Node preferences = Preferences::get_preferences();
@@ -220,14 +233,17 @@ void ViewportEditorWorkspace::_no_project() {
                         std::vector<std::string> recently_opened =
                             project["RecentlyOpened"].as<std::vector<std::string>>();
                         bool found = false;
-                        for (const std::string& name : recently_opened) {
-                            if (name == project_config["ProjectName"].as<std::string>()) {
+                        for (const std::string& name : recently_opened)
+                        {
+                            if (name == project_config["ProjectName"].as<std::string>())
+                            {
                                 found = true;
                                 break;
                             }
                         }
 
-                        if (!found) {
+                        if (!found)
+                        {
                             recently_opened.push_back(files[0]);
                             project["RecentlyOpened"] = recently_opened;
                             preferences.write_file(Preferences::get_preferences_path());
@@ -255,13 +271,16 @@ void ViewportEditorWorkspace::_no_project() {
             ImGui::BeginChild(
                 "No Project Enabled -> Recently Opened List", ImVec2(0.0f, 0.0f), true
             );
-            if (recently_opened.size() > 0) {
+            if (recently_opened.size() > 0)
+            {
                 std::size_t last_size = recently_opened.size();
 
                 // Printing project select and remove button
-                for (std::size_t i = 0; i < recently_opened.size(); i++) {
+                for (std::size_t i = 0; i < recently_opened.size(); i++)
+                {
                     yaml::Node project_config = yaml::open(recently_opened[i]);
-                    if (project_config.empty()) {
+                    if (project_config.empty())
+                    {
                         recently_opened.erase(recently_opened.begin() + i);
                         continue;
                     }
@@ -275,19 +294,21 @@ void ViewportEditorWorkspace::_no_project() {
                                      ImGui::GetStyle().ItemInnerSpacing.x),
                                 0.0f
                             )
-                        )) {
-                        if (!Project::get()->load(recently_opened[i])) {
+                        ))
+                    {
+                        if (!Project::get()->load(recently_opened[i]))
                             recently_opened.erase(recently_opened.begin() + i);
-                        }
                     }
                     ImGui::SameLine();
-                    if (ImGui::Button("X")) {
+                    if (ImGui::Button("X"))
+                    {
                         recently_opened.erase(recently_opened.begin() + i);
                     }
                 }
 
                 // Update preferences config
-                if (recently_opened.size() != last_size) {
+                if (recently_opened.size() != last_size)
+                {
                     project_node["RecentlyOpened"] = recently_opened;
                     assert(
                         yaml::write(preferences, Preferences::get_preferences_path()) &&

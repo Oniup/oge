@@ -9,7 +9,8 @@
 
 namespace oge {
 
-App::App() {
+App::App()
+{
     assert(
         pfd::settings::available() && "Portable File Dialogs are not available for this platform, "
                                       "therefore cannot run this program, sorry"

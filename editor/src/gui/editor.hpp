@@ -13,7 +13,8 @@ struct ImFont;
 
 namespace oge {
 
-class PanelEditorWorkspaceBase {
+class PanelEditorWorkspaceBase
+{
   public:
     PanelEditorWorkspaceBase(const std::string& name);
     virtual ~PanelEditorWorkspaceBase() = default;
@@ -39,13 +40,15 @@ class PanelEditorWorkspaceBase {
     bool m_remove_when_disabled = false;
 };
 
-class EditorWorkspace : public ogl::ApplicationLayer {
+class EditorWorkspace : public ogl::ApplicationLayer
+{
   public:
     EditorWorkspace();
     virtual ~EditorWorkspace();
 
     template<typename _Panel, typename... _Args>
-    _Panel* push_panel(_Args&&... args) {
+    _Panel* push_panel(_Args&&... args)
+    {
         m_panels.push_back(new _Panel{std::forward<_Args>(args)...});
         return static_cast<_Panel*>(m_panels.back());
     }
@@ -70,7 +73,8 @@ class EditorWorkspace : public ogl::ApplicationLayer {
 /******************************** Base Windows ********************************/
 /******************************************************************************/
 
-class DockingEditorWorkspace : public PanelEditorWorkspaceBase {
+class DockingEditorWorkspace : public PanelEditorWorkspaceBase
+{
   public:
     DockingEditorWorkspace(EditorWorkspace* workspace);
     virtual ~DockingEditorWorkspace() override = default;
@@ -85,7 +89,8 @@ class DockingEditorWorkspace : public PanelEditorWorkspaceBase {
     int m_window_flags = 0;
 };
 
-class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase {
+class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase
+{
   public:
     HierarchyEditorWorkspace();
     virtual ~HierarchyEditorWorkspace() override = default;
@@ -105,7 +110,8 @@ class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase {
     std::vector<ogl::Entity> m_deleted_entity = {};
 };
 
-class ConsoleEditorWorkspace : public PanelEditorWorkspaceBase {
+class ConsoleEditorWorkspace : public PanelEditorWorkspaceBase
+{
   public:
     ConsoleEditorWorkspace(ogl::Debug* debug);
     virtual ~ConsoleEditorWorkspace() override = default;
@@ -121,7 +127,8 @@ class ConsoleEditorWorkspace : public PanelEditorWorkspaceBase {
     ImFont* m_font = nullptr;
 };
 
-class AssetsEditorWorkspace : public PanelEditorWorkspaceBase {
+class AssetsEditorWorkspace : public PanelEditorWorkspaceBase
+{
   public:
     AssetsEditorWorkspace();
     virtual ~AssetsEditorWorkspace() override = default;
@@ -129,7 +136,8 @@ class AssetsEditorWorkspace : public PanelEditorWorkspaceBase {
     virtual void on_imgui_update() override;
 };
 
-class ViewportEditorWorkspace : public PanelEditorWorkspaceBase {
+class ViewportEditorWorkspace : public PanelEditorWorkspaceBase
+{
   public:
     ViewportEditorWorkspace(ogl::Framebuffer* framebuffer);
     virtual ~ViewportEditorWorkspace() override = default;
