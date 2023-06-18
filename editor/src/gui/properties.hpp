@@ -8,7 +8,7 @@
 
 namespace oge {
 
-typedef void (*fnptr_imgui_draw_comp)(const std::string& fieldname, void* ptr);
+typedef void (*fnptr_imgui_draw_property)(const std::string& fieldname, void* ptr, float step_size);
 
 class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase
 {
@@ -20,16 +20,16 @@ class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase
 
   private:
     void _initialize_draw_fnptrs(
-        std::initializer_list<std::pair<std::uint64_t, fnptr_imgui_draw_comp>> list
+        std::initializer_list<std::pair<std::uint64_t, fnptr_imgui_draw_property>> list
     );
     void _imgui_draw(
         ecs::byte* object, std::set<ogl::MemberInfo>::iterator it,
-        const std::set<ogl::MemberInfo>::iterator end, ogl::ReflectionRegistry* reflection,
-        const float width
+        const std::set<ogl::MemberInfo>::iterator end, ogl::ReflectionRegistry* reflection
     );
 
     HierarchyEditorWorkspace* m_hierarchy = nullptr;
-    std::unordered_map<std::uint64_t, fnptr_imgui_draw_comp> m_draw_fnptrs = {};
+    std::unordered_map<std::uint64_t, fnptr_imgui_draw_property> m_draw_fnptrs = {};
+    float m_step_size = 0.5f;
 };
 
 } // namespace oge

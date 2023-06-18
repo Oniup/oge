@@ -6,25 +6,25 @@
 
 namespace oge {
 
-void int_draw(const std::string& fieldname, void* ptr)
+void int_draw(const std::string& fieldname, void* ptr, float step_size)
 {
     int* value = reinterpret_cast<int*>(ptr);
-    ImGui::InputInt(std::string("##" + fieldname).c_str(), value);
+    ImGui::DragInt(std::string("##" + fieldname).c_str(), value, step_size);
 }
 
-void float_draw(const std::string& fieldname, void* ptr)
+void float_draw(const std::string& fieldname, void* ptr, float step_size)
 {
     float* value = reinterpret_cast<float*>(ptr);
-    ImGui::InputFloat(std::string("##" + fieldname).c_str(), value);
+    ImGui::DragFloat(std::string("##" + fieldname).c_str(), value, step_size);
 }
 
-void bool_draw(const std::string& fieldname, void* ptr)
+void bool_draw(const std::string& fieldname, void* ptr, float step_size)
 {
     bool* value = reinterpret_cast<bool*>(ptr);
     ImGui::Checkbox(std::string("##" + fieldname).c_str(), value);
 }
 
-void str_draw(const std::string& fieldname, void* ptr)
+void str_draw(const std::string& fieldname, void* ptr, float step_size)
 {
     constexpr std::size_t max_line_length = 10000;
 
@@ -37,40 +37,40 @@ void str_draw(const std::string& fieldname, void* ptr)
     *value = str;
 }
 
-void vec2_draw(const std::string& fieldname, void* ptr)
+void vec2_draw(const std::string& fieldname, void* ptr, float step_size)
 {
     glm::vec2& vec = *reinterpret_cast<glm::vec2*>(ptr);
-    ImGui::InputFloat2(std::string("##" + fieldname).c_str(), &vec[0]);
+    ImGui::DragFloat2(std::string("##" + fieldname).c_str(), &vec[0], step_size);
 }
 
-void vec3_draw(const std::string& fieldname, void* ptr)
+void vec3_draw(const std::string& fieldname, void* ptr, float step_size)
 {
-    glm::vec3& vec = *reinterpret_cast<glm::vec3*>(ptr);
-    ImGui::InputFloat3(std::string("##" + fieldname).c_str(), &vec[0]);
+    float* vec = reinterpret_cast<float*>(ptr);
+    ImGui::DragFloat3(std::string("##" + fieldname).c_str(), vec, step_size);
 }
 
-void vec4_draw(const std::string& fieldname, void* ptr)
+void vec4_draw(const std::string& fieldname, void* ptr, float step_size)
 {
-    glm::vec4& vec = *reinterpret_cast<glm::vec4*>(ptr);
-    ImGui::InputFloat4(std::string("##" + fieldname).c_str(), &vec[0]);
+    float* vec = reinterpret_cast<float*>(ptr);
+    ImGui::DragFloat4(std::string("##" + fieldname).c_str(), vec, step_size);
 }
 
-void ivec2_draw(const std::string& fieldname, void* ptr)
+void ivec2_draw(const std::string& fieldname, void* ptr, float step_size)
 {
-    glm::ivec2& vec = *reinterpret_cast<glm::ivec2*>(ptr);
-    ImGui::InputInt2(std::string("##" + fieldname).c_str(), &vec[0]);
+    int* vec = reinterpret_cast<int*>(ptr);
+    ImGui::DragInt2(std::string("##" + fieldname).c_str(), vec, step_size);
 }
 
-void ivec3_draw(const std::string& fieldname, void* ptr)
+void ivec3_draw(const std::string& fieldname, void* ptr, float step_size)
 {
-    glm::ivec3& vec = *reinterpret_cast<glm::ivec3*>(ptr);
-    ImGui::InputInt3(std::string("##" + fieldname).c_str(), &vec[0]);
+    int* vec = reinterpret_cast<int*>(ptr);
+    ImGui::DragInt3(std::string("##" + fieldname).c_str(), vec, step_size);
 }
 
-void ivec4_draw(const std::string& fieldname, void* ptr)
+void ivec4_draw(const std::string& fieldname, void* ptr, float step_size)
 {
-    glm::ivec4& vec = *reinterpret_cast<glm::ivec4*>(ptr);
-    ImGui::InputInt4(std::string("##" + fieldname).c_str(), &vec[0]);
+    int* vec = reinterpret_cast<int*>(ptr);
+    ImGui::DragInt4(std::string("##" + fieldname).c_str(), vec, step_size);
 }
 
 PropertiesEditorWorkspace::PropertiesEditorWorkspace(HierarchyEditorWorkspace* hierarchy)
@@ -106,6 +106,7 @@ void PropertiesEditorWorkspace::on_imgui_update()
         if (m_hierarchy->get_selected_entity() != ECS_ENTITY_DESTROYED)
         {
             ogl::Entity entity = m_hierarchy->get_selected_entity();
+
             if (entity.get_component<ogl::NameComponent>() == nullptr)
             {
                 if (ImGui::MenuItem("Add Name"))
@@ -124,7 +125,6 @@ void PropertiesEditorWorkspace::on_imgui_update()
 
     if (m_hierarchy->get_selected_entity() != ECS_ENTITY_DESTROYED)
     {
-        float width = ImGui::GetContentRegionAvail().x;
         ogl::Entity entity = m_hierarchy->get_selected_entity();
         ogl::Scene* scene = ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene();
         ogl::ReflectionRegistry* reflection =
@@ -134,14 +134,13 @@ void PropertiesEditorWorkspace::on_imgui_update()
         ogl::TagComponent* tag_comp = entity.get_component<ogl::TagComponent>();
 
         static char str[OGL_NAME_COMPONENT_MAX_SIZE] = {};
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
         if (name_comp != nullptr)
         {
             strncpy(str, name_comp->name.c_str(), name_comp->name.size());
             str[name_comp->name.size()] = '\0';
 
-            ImGui::InputTextEx(
-                "##NameComponent", "", str, OGL_NAME_COMPONENT_MAX_SIZE, ImVec2(width, 0), 0
-            );
+            ImGui::InputText("##NameComponent", str, OGL_NAME_COMPONENT_MAX_SIZE);
             name_comp->name = str;
         }
 
@@ -150,11 +149,13 @@ void PropertiesEditorWorkspace::on_imgui_update()
             strncpy(str, tag_comp->tag.c_str(), tag_comp->tag.size());
             str[tag_comp->tag.size()] = '\0';
 
-            ImGui::InputTextEx(
-                "##TagComponent", "", str, OGL_NAME_COMPONENT_MAX_SIZE, ImVec2(width, 0), 0
-            );
+            ImGui::InputText("##NameComponent", str, OGL_NAME_COMPONENT_MAX_SIZE);
             tag_comp->tag = str;
         }
+        ImGui::PopItemWidth();
+
+        ImGui::NewLine();
+        ImGui::Separator();
 
         for (ecs::ObjectPool* pool : scene->get_registry().get_pools())
         {
@@ -169,10 +170,19 @@ void PropertiesEditorWorkspace::on_imgui_update()
             {
                 if (reflection->get_all_type_infos().contains(pool->get_type_hash()))
                 {
-                    const std::set<ogl::MemberInfo>& members =
-                        reflection->get_members(ogl::TypeId(pool->get_type_hash()));
+                    if (ImGui::CollapsingHeader(
+                            pool->get_name().c_str(), ImGuiTreeNodeFlags_DefaultOpen
+                        ))
+                    {
+                        ImGui::BeginTable("Component Table", 2, ImGuiTableFlags_BordersInnerH);
+                        {
+                            const std::set<ogl::MemberInfo>& members =
+                                reflection->get_members(ogl::TypeId(pool->get_type_hash()));
 
-                    _imgui_draw(object, members.begin(), members.end(), reflection, width);
+                            _imgui_draw(object, members.begin(), members.end(), reflection);
+                        }
+                        ImGui::EndTable();
+                    }
                 }
             }
         }
@@ -182,7 +192,7 @@ void PropertiesEditorWorkspace::on_imgui_update()
 }
 
 void PropertiesEditorWorkspace::_initialize_draw_fnptrs(
-    std::initializer_list<std::pair<std::uint64_t, fnptr_imgui_draw_comp>> list
+    std::initializer_list<std::pair<std::uint64_t, fnptr_imgui_draw_property>> list
 )
 {
     for (const auto& [hash, fnptr] : list)
@@ -191,35 +201,62 @@ void PropertiesEditorWorkspace::_initialize_draw_fnptrs(
 
 void PropertiesEditorWorkspace::_imgui_draw(
     ecs::byte* object, std::set<ogl::MemberInfo>::iterator it,
-    const std::set<ogl::MemberInfo>::iterator end, ogl::ReflectionRegistry* reflection,
-    const float width
+    const std::set<ogl::MemberInfo>::iterator end, ogl::ReflectionRegistry* reflection
 )
 {
     if (it != end)
     {
+        if (it->variable.get_flags() & ogl::VariableFlags_Const)
+            return;
+
         if (m_draw_fnptrs.contains(it->type.get_id()))
         {
-            ImGui::Text(
-                "%s (%s)", it->fieldname.c_str(),
-                reflection->get_variable_type_name(it->variable).c_str()
-            );
+            ogl::TransformComponent* transform = reinterpret_cast<ogl::TransformComponent*>(object);
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", it->fieldname.c_str());
+            ImGui::TableNextColumn();
+
+            fnptr_imgui_draw_property fnptr = m_draw_fnptrs[it->type.get_id()];
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+            fnptr(it->fieldname, static_cast<void*>(object + it->offset), m_step_size);
+            ImGui::PopItemWidth();
+
+            ImGui::TableNextRow();
 
             it++;
-            _imgui_draw(object, it, end, reflection, width);
+            _imgui_draw(object, it, end, reflection);
         }
         else
         {
             // TODO: Check for pointers types as it fucks with it
-            if (reflection->type_contains_members(it->type))
+            if (reflection->type_contains_members(it->variable.get_type().get_id()))
             {
-                const std::set<ogl::MemberInfo>& members = reflection->get_members(it->type);
-                ecs::byte* new_object = object + it->offset;
-                ImGui::BeginChild(
-                    std::string("Right_" + reflection->get_type_info(it->type).name).c_str(),
-                    ImVec2(), true
+                // Not going to deal with pointers higher than 2
+                if (it->variable.get_pointer_count() > 2)
+                    return;
+
+                ImGui::TableNextColumn();
+                ImGui::Text(
+                    "%s (%s)", it->fieldname.c_str(),
+                    reflection->get_variable_type_name(it->variable).c_str()
                 );
-                _imgui_draw(new_object, members.begin(), members.end(), reflection, width);
-                ImGui::EndChild();
+                ImGui::TableNextRow();
+
+                if (it->variable.is_pointer())
+                {
+                    // TODO: ...
+                }
+                else if (it->variable.is_array())
+                {
+                    // TODO: ...
+                }
+                else
+                {
+                    const std::set<ogl::MemberInfo>& members = reflection->get_members(it->type);
+                    ecs::byte* new_object = object + it->offset;
+                    _imgui_draw(new_object, members.begin(), members.end(), reflection);
+                }
             }
         }
     }
