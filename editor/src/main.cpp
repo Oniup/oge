@@ -1,6 +1,7 @@
 #include "gui/app.hpp"
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     oge::App* app = new oge::App();
     app->run();
     delete app;

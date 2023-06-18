@@ -100,13 +100,16 @@ PropertiesEditorWorkspace::PropertiesEditorWorkspace(HierarchyEditorWorkspace* h
 void PropertiesEditorWorkspace::on_imgui_update()
 {
     ImGui::Begin(get_name().c_str(), &get_enabled(), ImGuiWindowFlags_MenuBar);
+    static bool add_component_popup = false;
 
     if (ImGui::BeginMenuBar())
     {
         if (m_hierarchy->get_selected_entity() != ECS_ENTITY_DESTROYED)
         {
-            ogl::Entity entity = m_hierarchy->get_selected_entity();
+            if (ImGui::MenuItem("Add Component"))
+                add_component_popup = true;
 
+            ogl::Entity entity = m_hierarchy->get_selected_entity();
             if (entity.get_component<ogl::NameComponent>() == nullptr)
             {
                 if (ImGui::MenuItem("Add Name"))
@@ -160,7 +163,8 @@ void PropertiesEditorWorkspace::on_imgui_update()
         for (ecs::ObjectPool* pool : scene->get_registry().get_pools())
         {
             if (pool->get_type_hash() == ogl::TypeId::create<ogl::NameComponent>().get_id() ||
-                pool->get_type_hash() == ogl::TypeId::create<ogl::TagComponent>().get_id())
+                pool->get_type_hash() == ogl::TypeId::create<ogl::TagComponent>().get_id() ||
+                pool->get_type_hash() == ogl::TypeId::create<ogl::ParentComponent>().get_id())
             {
                 continue;
             }
@@ -176,6 +180,8 @@ void PropertiesEditorWorkspace::on_imgui_update()
                     {
                         ImGui::BeginTable("Component Table", 2, ImGuiTableFlags_BordersInnerH);
                         {
+                            ImGui::TableSetupColumn("Names", ImGuiTableColumnFlags_WidthFixed, ImGui::GetContentRegionAvail().x * 0.25f);
+                            ImGui::TableSetupColumn("settings", ImGuiTableColumnFlags_WidthFixed, ImGui::GetContentRegionAvail().x * 0.75f);
                             const std::set<ogl::MemberInfo>& members =
                                 reflection->get_members(ogl::TypeId(pool->get_type_hash()));
 
@@ -185,6 +191,40 @@ void PropertiesEditorWorkspace::on_imgui_update()
                     }
                 }
             }
+        }
+
+        if (add_component_popup)
+        {
+            ImGui::OpenPopup("Add Component");
+            add_component_popup = false;
+        }
+
+        float popup_width = ImGui::GetContentRegionAvail().x;
+        if (ImGui::BeginPopup("Add Component"))
+        {
+            ogl::ReflectionRegistry* reflection =
+                ogl::Application::get_layer<ogl::ReflectionRegistry>();
+            ImGui::BeginChild("List", ImVec2(popup_width, 300));
+            {
+                for (const auto& [type, info] : reflection->get_all_type_infos())
+                {
+                    if (type == ogl::TypeId::create<ogl::NameComponent>().get_id() ||
+                        type == ogl::TypeId::create<ogl::TagComponent>().get_id() ||
+                        type == ogl::TypeId::create<ogl::ParentComponent>().get_id())
+                    {
+                        continue;
+                    }
+                    else if (entity.get_component(type) != nullptr)
+                        continue;
+
+                    if (ImGui::Button(
+                            info.name.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0)
+                        ))
+                        entity.add_component(reflection, type);
+                }
+            }
+            ImGui::EndChild();
+            ImGui::EndPopup();
         }
     }
 
