@@ -45,7 +45,8 @@ App::App()
         static_cast<HierarchyEditorWorkspace*>(workspace->get_panel("Hierarchy"))
     );
 
-    get_application_layer<ogl::ReflectionRegistry>()->log_all_detailed_types();
+    // get_application_layer<ogl::ReflectionRegistry>()->log_all_detailed_types();
+    get_application_layer<ogl::ReflectionRegistry>()->log_all_templated_types();
 }
 
 } // namespace oge
