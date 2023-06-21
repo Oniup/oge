@@ -19,13 +19,20 @@ class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase
     virtual void on_imgui_update() override;
 
   private:
+    struct StructDrawData
+    {
+        std::byte* object;
+        std::set<ogl::MemberInfo>::iterator it;
+        std::set<ogl::MemberInfo>::iterator end;
+        ogl::ReflectionRegistry* reflection;
+    };
+
     void _initialize_draw_fnptrs(
         std::initializer_list<std::pair<std::uint64_t, fnptr_imgui_draw_property>> list
     );
-    void _imgui_draw(
-        std::byte* object, std::set<ogl::MemberInfo>::iterator it,
-        const std::set<ogl::MemberInfo>::iterator end, ogl::ReflectionRegistry* reflection
-    );
+    void _imgui_draw(StructDrawData& data);
+    void _imgui_draw_vector(StructDrawData& data, const ogl::TypeInfo& vector_inner_type_info);
+    void _imgui_draw_struct(StructDrawData& data);
 
     HierarchyEditorWorkspace* m_hierarchy = nullptr;
     std::unordered_map<std::uint64_t, fnptr_imgui_draw_property> m_draw_fnptrs = {};

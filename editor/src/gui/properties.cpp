@@ -180,12 +180,23 @@ void PropertiesEditorWorkspace::on_imgui_update()
                     {
                         ImGui::BeginTable("Component Table", 2, ImGuiTableFlags_BordersInnerH);
                         {
-                            ImGui::TableSetupColumn("Names", ImGuiTableColumnFlags_WidthFixed, ImGui::GetContentRegionAvail().x * 0.25f);
-                            ImGui::TableSetupColumn("settings", ImGuiTableColumnFlags_WidthFixed, ImGui::GetContentRegionAvail().x * 0.75f);
+                            ImGui::TableSetupColumn(
+                                "Names", ImGuiTableColumnFlags_WidthFixed,
+                                ImGui::GetContentRegionAvail().x * 0.25f
+                            );
+                            ImGui::TableSetupColumn(
+                                "settings", ImGuiTableColumnFlags_WidthFixed,
+                                ImGui::GetContentRegionAvail().x * 0.75f
+                            );
                             const std::set<ogl::MemberInfo>& members =
                                 reflection->get_members(ogl::TypeId(pool->get_type_hash()));
 
-                            _imgui_draw(object, members.begin(), members.end(), reflection);
+                            StructDrawData data = {};
+                            data.object = object;
+                            data.it = members.begin();
+                            data.end = members.end();
+                            data.reflection = reflection;
+                            _imgui_draw(data);
                         }
                         ImGui::EndTable();
                     }
@@ -239,65 +250,101 @@ void PropertiesEditorWorkspace::_initialize_draw_fnptrs(
         m_draw_fnptrs.emplace(hash, fnptr);
 }
 
-void PropertiesEditorWorkspace::_imgui_draw(
-    std::byte* object, std::set<ogl::MemberInfo>::iterator it,
-    const std::set<ogl::MemberInfo>::iterator end, ogl::ReflectionRegistry* reflection
+void PropertiesEditorWorkspace::_imgui_draw(StructDrawData& data)
+{
+    // Not going to deal with pointers higher than 2
+    if (data.it->variable.get_pointer_count() > 2)
+        return;
+
+    if (data.it == data.end)
+        return;
+
+    if (data.it->variable.get_flags() & ogl::VariableFlags_Const)
+        return;
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", data.it->fieldname.c_str());
+    ImGui::TableNextColumn();
+
+    const ogl::TypeInfo& info = data.reflection->get_type_info(data.it->type);
+    if (info.flags & ogl::TypeInfoFlags_StdVector)
+        _imgui_draw_vector(data, info);
+    if (info.flags & ogl::TypeInfoFlags_StdArray)
+    {
+    }
+    else if (m_draw_fnptrs.contains(data.it->type.get_id()))
+    {
+        fnptr_imgui_draw_property fnptr = m_draw_fnptrs[data.it->type.get_id()];
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+        fnptr(data.it->fieldname, static_cast<void*>(data.object + data.it->offset), m_step_size);
+        ImGui::PopItemWidth();
+
+        ImGui::TableNextRow();
+        data.it++;
+        _imgui_draw(data);
+    }
+    else
+    {
+    }
+}
+
+void PropertiesEditorWorkspace::_imgui_draw_vector(
+    StructDrawData& data, const ogl::TypeInfo& vector_inner_type_info
 )
 {
-    if (it != end)
+    assert(
+        data.reflection->is_templated_type(data.it->type) &&
+        "Attempted to create vector property in editor, however type is not in the "
+        "templated reflection registry"
+    );
+
+    // There should only be one type for vector
+    std::uint64_t internal_type =
+        data.reflection->get_templated_internal_types(data.it->type).front();
+
+    if (m_draw_fnptrs.contains(internal_type))
     {
-        if (it->variable.get_flags() & ogl::VariableFlags_Const)
-            return;
+        // TODO: ...
 
-        if (m_draw_fnptrs.contains(it->type.get_id()))
+        ImGui::TableNextRow();
+        data.it++;
+        _imgui_draw(data);
+    }
+    else
+        ImGui::Text("%s not supported editable type", vector_inner_type_info.name.c_str());
+}
+
+void PropertiesEditorWorkspace::_imgui_draw_struct(StructDrawData& data)
+{
+    // TODO: Check for pointers types as it fucks with it
+    if (data.reflection->type_contains_members(data.it->variable.get_type().get_id()))
+    {
+        ImGui::TableNextColumn();
+        ImGui::Text(
+            "%s (%s)", data.it->fieldname.c_str(),
+            data.reflection->get_variable_type_name(data.it->variable).c_str()
+        );
+        ImGui::TableNextRow();
+
+        if (data.it->variable.is_pointer())
         {
-            ogl::TransformComponent* transform = reinterpret_cast<ogl::TransformComponent*>(object);
-
-            ImGui::TableNextColumn();
-            ImGui::Text("%s", it->fieldname.c_str());
-            ImGui::TableNextColumn();
-
-            fnptr_imgui_draw_property fnptr = m_draw_fnptrs[it->type.get_id()];
-            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-            fnptr(it->fieldname, static_cast<void*>(object + it->offset), m_step_size);
-            ImGui::PopItemWidth();
-
-            ImGui::TableNextRow();
-
-            it++;
-            _imgui_draw(object, it, end, reflection);
+            // TODO: ...
+        }
+        else if (data.it->variable.is_array())
+        {
+            // TODO: ...
         }
         else
         {
-            // TODO: Check for pointers types as it fucks with it
-            if (reflection->type_contains_members(it->variable.get_type().get_id()))
-            {
-                // Not going to deal with pointers higher than 2
-                if (it->variable.get_pointer_count() > 2)
-                    return;
+            const std::set<ogl::MemberInfo>& members = data.reflection->get_members(data.it->type);
 
-                ImGui::TableNextColumn();
-                ImGui::Text(
-                    "%s (%s)", it->fieldname.c_str(),
-                    reflection->get_variable_type_name(it->variable).c_str()
-                );
-                ImGui::TableNextRow();
+            StructDrawData new_object = {};
+            new_object.object = data.object + data.it->offset;
+            new_object.it = members.begin();
+            new_object.end = members.end();
+            new_object.reflection = data.reflection;
 
-                if (it->variable.is_pointer())
-                {
-                    // TODO: ...
-                }
-                else if (it->variable.is_array())
-                {
-                    // TODO: ...
-                }
-                else
-                {
-                    const std::set<ogl::MemberInfo>& members = reflection->get_members(it->type);
-                    std::byte* new_object = object + it->offset;
-                    _imgui_draw(new_object, members.begin(), members.end(), reflection);
-                }
-            }
+            _imgui_draw(new_object);
         }
     }
 }
