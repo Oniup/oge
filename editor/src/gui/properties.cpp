@@ -169,7 +169,7 @@ void PropertiesEditorWorkspace::on_imgui_update()
                 continue;
             }
 
-            ecs::byte* object = reinterpret_cast<ecs::byte*>(pool->get_entitys_object(entity));
+            std::byte* object = reinterpret_cast<std::byte*>(pool->get_entitys_object(entity));
             if (object != nullptr)
             {
                 if (reflection->get_all_type_infos().contains(pool->get_type_hash()))
@@ -240,7 +240,7 @@ void PropertiesEditorWorkspace::_initialize_draw_fnptrs(
 }
 
 void PropertiesEditorWorkspace::_imgui_draw(
-    ecs::byte* object, std::set<ogl::MemberInfo>::iterator it,
+    std::byte* object, std::set<ogl::MemberInfo>::iterator it,
     const std::set<ogl::MemberInfo>::iterator end, ogl::ReflectionRegistry* reflection
 )
 {
@@ -294,7 +294,7 @@ void PropertiesEditorWorkspace::_imgui_draw(
                 else
                 {
                     const std::set<ogl::MemberInfo>& members = reflection->get_members(it->type);
-                    ecs::byte* new_object = object + it->offset;
+                    std::byte* new_object = object + it->offset;
                     _imgui_draw(new_object, members.begin(), members.end(), reflection);
                 }
             }

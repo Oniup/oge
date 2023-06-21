@@ -23,7 +23,7 @@ class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase
         std::initializer_list<std::pair<std::uint64_t, fnptr_imgui_draw_property>> list
     );
     void _imgui_draw(
-        ecs::byte* object, std::set<ogl::MemberInfo>::iterator it,
+        std::byte* object, std::set<ogl::MemberInfo>::iterator it,
         const std::set<ogl::MemberInfo>::iterator end, ogl::ReflectionRegistry* reflection
     );
 
