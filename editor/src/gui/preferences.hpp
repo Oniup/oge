@@ -6,8 +6,6 @@
 #include <portable-file-dialogs/portable-file-dialogs.h>
 #include <yaml/yaml.hpp>
 
-namespace oge {
-
 // TODO: Implement Preferences Editor window
 class Preferences
 {
@@ -26,7 +24,5 @@ class Preferences
   public:
     Preferences();
 };
-
-} // namespace oge
 
 #endif

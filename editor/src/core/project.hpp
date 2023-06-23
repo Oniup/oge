@@ -3,8 +3,6 @@
 
 #include <ogl/ogl.hpp>
 
-namespace oge {
-
 class Project : public ogl::ApplicationLayer
 {
   public:
@@ -39,7 +37,5 @@ class Project : public ogl::ApplicationLayer
     bool m_3d_based = true;
     bool m_unsaved = false;
 };
-
-} // namespace oge
 
 #endif

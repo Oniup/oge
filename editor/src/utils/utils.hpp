@@ -5,8 +5,6 @@
 #include <imgui/imgui_internal.h>
 #include <ogl/ogl.hpp>
 
-namespace oge {
-
 struct ImGuiHelper
 {
     static ImVec2 calc_button_size(const std::string& label = "")
@@ -20,7 +18,5 @@ struct ImGuiHelper
         );
     };
 };
-
-} // namespace oge
 
 #endif

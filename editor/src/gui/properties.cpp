@@ -4,8 +4,6 @@
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
 
-namespace oge {
-
 void int_draw(const std::string& fieldname, void* ptr, float step_size)
 {
     int* value = reinterpret_cast<int*>(ptr);
@@ -399,5 +397,3 @@ void PropertiesEditorWorkspace::_imgui_draw_non_primitive(StructDrawData& data)
         }
     }
 }
-
-} // namespace oge

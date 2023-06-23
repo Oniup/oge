@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-    oge::App* app = new oge::App();
+    App* app = new App();
     app->run();
     delete app;
 }

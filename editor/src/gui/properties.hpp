@@ -6,8 +6,6 @@
 #include <imgui/imgui.h>
 #include <ogl/ogl.hpp>
 
-namespace oge {
-
 typedef void (*fnptr_imgui_draw_property)(const std::string& fieldname, void* ptr, float step_size);
 
 class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase
@@ -38,7 +36,5 @@ class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase
     std::unordered_map<std::uint64_t, fnptr_imgui_draw_property> m_draw_fnptrs = {};
     float m_step_size = 0.5f;
 };
-
-} // namespace oge
 
 #endif

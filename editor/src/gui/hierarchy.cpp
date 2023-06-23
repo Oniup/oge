@@ -2,8 +2,6 @@
 
 #include <imgui/imgui.h>
 
-namespace oge {
-
 HierarchyEditorWorkspace::HierarchyEditorWorkspace() : PanelEditorWorkspaceBase("Hierarchy") {}
 
 void HierarchyEditorWorkspace::on_imgui_update()
@@ -143,5 +141,3 @@ void HierarchyEditorWorkspace::_popup_menu(ogl::Entity* entity)
         }
     }
 }
-
-} // namespace oge

@@ -5,8 +5,6 @@
 #include <imgui/imgui.h>
 #include <portable-file-dialogs/portable-file-dialogs.h>
 
-namespace oge {
-
 DockingEditorWorkspace::DockingEditorWorkspace(EditorWorkspace* workspace)
     : PanelEditorWorkspaceBase("Docking")
 {
@@ -164,5 +162,3 @@ void DockingEditorWorkspace::on_imgui_update()
 }
 
 void DockingEditorWorkspace::_menu_open_window(const std::string& panel_name) {}
-
-} // namespace oge

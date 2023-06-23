@@ -10,8 +10,6 @@
 #include <imgui/imgui.h>
 #include <portable-file-dialogs/portable-file-dialogs.h>
 
-namespace oge {
-
 enum ConsoleFileReadingStage
 {
     ConsoleFileReadingStage_Type,
@@ -323,5 +321,3 @@ void AssetsEditorWorkspace::on_imgui_update()
     ImGui::Begin(get_name().c_str(), &get_enabled());
     ImGui::End();
 }
-
-} // namespace oge

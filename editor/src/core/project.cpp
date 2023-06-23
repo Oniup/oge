@@ -7,8 +7,6 @@
 #include <portable-file-dialogs/portable-file-dialogs.h>
 #include <yaml/yaml.hpp>
 
-namespace oge {
-
 Project* Project::m_Instance = nullptr;
 
 void Project::create_new_popup()
@@ -249,5 +247,3 @@ void Project::serialize(const std::string& filename, bool use_scene_name)
 }
 
 void Project::deserialize(ogl::Scene* scene, const std::string& filename) {}
-
-} // namespace oge

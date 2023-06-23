@@ -7,8 +7,6 @@
 #include <imgui/imgui_internal.h>
 #include <portable-file-dialogs/portable-file-dialogs.h>
 
-namespace oge {
-
 ViewportEditorWorkspace::ViewportEditorWorkspace(ogl::Framebuffer* framebuffer)
     : PanelEditorWorkspaceBase("Viewport")
 {
@@ -322,5 +320,3 @@ void ViewportEditorWorkspace::_no_project()
     }
     ImGui::EndChild();
 }
-
-} // namespace oge

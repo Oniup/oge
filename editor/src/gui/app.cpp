@@ -7,8 +7,6 @@
 #include <ogl/renderer/renderer.hpp>
 #include <portable-file-dialogs/portable-file-dialogs.h>
 
-namespace oge {
-
 App::App()
 {
     assert(
@@ -48,5 +46,3 @@ App::App()
     // get_application_layer<ogl::ReflectionRegistry>()->log_all_detailed_types();
     get_application_layer<ogl::ReflectionRegistry>()->log_all_templated_types();
 }
-
-} // namespace oge
