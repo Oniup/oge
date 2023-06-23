@@ -5,3 +5,7 @@
 [submodule "editor/thirdparty/portable-file-dialogs"]
 	path = editor/thirdparty/portable-file-dialogs
 	url = https://github.com/samhocevar/portable-file-dialogs.git
+[submodule "kryos-lib"]
+	path = kryos-lib
+	url = https://github.com/Oniup/kryos-lib.git
+	branch = master
