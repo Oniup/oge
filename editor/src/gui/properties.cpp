@@ -76,23 +76,23 @@ PropertiesEditorWorkspace::PropertiesEditorWorkspace(HierarchyEditorWorkspace* h
 {
     // PERFORMANCE: probably be better if this constexpr
     _initialize_draw_fnptrs({
-        {ogl::TypeId::create<std::int32_t>().get_id(), int_draw},
-        {ogl::TypeId::create<std::int64_t>().get_id(), int_draw},
-        {ogl::TypeId::create<std::uint32_t>().get_id(), int_draw},
-        {ogl::TypeId::create<std::uint64_t>().get_id(), int_draw},
+        {kryos::TypeId::create<std::int32_t>().get_id(), int_draw},
+        {kryos::TypeId::create<std::int64_t>().get_id(), int_draw},
+        {kryos::TypeId::create<std::uint32_t>().get_id(), int_draw},
+        {kryos::TypeId::create<std::uint64_t>().get_id(), int_draw},
 
-        {ogl::TypeId::create<float>().get_id(), float_draw},
-        {ogl::TypeId::create<bool>().get_id(), bool_draw},
+        {kryos::TypeId::create<float>().get_id(), float_draw},
+        {kryos::TypeId::create<bool>().get_id(), bool_draw},
 
-        {ogl::TypeId::create<std::string>().get_id(), str_draw},
+        {kryos::TypeId::create<std::string>().get_id(), str_draw},
 
-        {ogl::TypeId::create<glm::vec2>().get_id(), vec2_draw},
-        {ogl::TypeId::create<glm::vec3>().get_id(), vec3_draw},
-        {ogl::TypeId::create<glm::vec4>().get_id(), vec4_draw},
+        {kryos::TypeId::create<glm::vec2>().get_id(), vec2_draw},
+        {kryos::TypeId::create<glm::vec3>().get_id(), vec3_draw},
+        {kryos::TypeId::create<glm::vec4>().get_id(), vec4_draw},
 
-        {ogl::TypeId::create<glm::ivec2>().get_id(), ivec2_draw},
-        {ogl::TypeId::create<glm::ivec3>().get_id(), ivec3_draw},
-        {ogl::TypeId::create<glm::ivec4>().get_id(), ivec4_draw},
+        {kryos::TypeId::create<glm::ivec2>().get_id(), ivec2_draw},
+        {kryos::TypeId::create<glm::ivec3>().get_id(), ivec3_draw},
+        {kryos::TypeId::create<glm::ivec4>().get_id(), ivec4_draw},
     });
 }
 
@@ -108,17 +108,17 @@ void PropertiesEditorWorkspace::on_imgui_update()
             if (ImGui::MenuItem("Add Component"))
                 add_component_popup = true;
 
-            ogl::Entity entity = m_hierarchy->get_selected_entity();
-            if (entity.get_component<ogl::NameComponent>() == nullptr)
+            kryos::Entity entity = m_hierarchy->get_selected_entity();
+            if (entity.get_component<kryos::NameComponent>() == nullptr)
             {
                 if (ImGui::MenuItem("Add Name"))
-                    entity.add_component<ogl::NameComponent>();
+                    entity.add_component<kryos::NameComponent>();
             }
 
-            if (entity.get_component<ogl::TagComponent>() == nullptr)
+            if (entity.get_component<kryos::TagComponent>() == nullptr)
             {
                 if (ImGui::MenuItem("Add Tag"))
-                    entity.add_component<ogl::TagComponent>();
+                    entity.add_component<kryos::TagComponent>();
             }
         }
 
@@ -127,22 +127,22 @@ void PropertiesEditorWorkspace::on_imgui_update()
 
     if (m_hierarchy->get_selected_entity() != ECS_ENTITY_DESTROYED)
     {
-        ogl::Entity entity = m_hierarchy->get_selected_entity();
-        ogl::Scene* scene = ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene();
-        ogl::ReflectionRegistry* reflection =
-            ogl::Application::get_layer<ogl::ReflectionRegistry>();
+        kryos::Entity entity = m_hierarchy->get_selected_entity();
+        kryos::Scene* scene = kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene();
+        kryos::ReflectionRegistry* reflection =
+            kryos::Application::get_layer<kryos::ReflectionRegistry>();
 
-        ogl::NameComponent* name_comp = entity.get_component<ogl::NameComponent>();
-        ogl::TagComponent* tag_comp = entity.get_component<ogl::TagComponent>();
+        kryos::NameComponent* name_comp = entity.get_component<kryos::NameComponent>();
+        kryos::TagComponent* tag_comp = entity.get_component<kryos::TagComponent>();
 
-        static char str[OGL_NAME_COMPONENT_MAX_SIZE] = {};
+        static char str[KRYOS_NAME_COMPONENT_MAX_SIZE] = {};
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
         if (name_comp != nullptr)
         {
             strncpy(str, name_comp->name.c_str(), name_comp->name.size());
             str[name_comp->name.size()] = '\0';
 
-            ImGui::InputText("##NameComponent", str, OGL_NAME_COMPONENT_MAX_SIZE);
+            ImGui::InputText("##NameComponent", str, KRYOS_NAME_COMPONENT_MAX_SIZE);
             name_comp->name = str;
         }
 
@@ -151,7 +151,7 @@ void PropertiesEditorWorkspace::on_imgui_update()
             strncpy(str, tag_comp->tag.c_str(), tag_comp->tag.size());
             str[tag_comp->tag.size()] = '\0';
 
-            ImGui::InputText("##NameComponent", str, OGL_NAME_COMPONENT_MAX_SIZE);
+            ImGui::InputText("##NameComponent", str, KRYOS_NAME_COMPONENT_MAX_SIZE);
             tag_comp->tag = str;
         }
         ImGui::PopItemWidth();
@@ -161,9 +161,9 @@ void PropertiesEditorWorkspace::on_imgui_update()
 
         for (ecs::ObjectPool* pool : scene->get_registry().get_pools())
         {
-            if (pool->get_type_hash() == ogl::TypeId::create<ogl::NameComponent>().get_id() ||
-                pool->get_type_hash() == ogl::TypeId::create<ogl::TagComponent>().get_id() ||
-                pool->get_type_hash() == ogl::TypeId::create<ogl::ParentComponent>().get_id())
+            if (pool->get_type_hash() == kryos::TypeId::create<kryos::NameComponent>().get_id() ||
+                pool->get_type_hash() == kryos::TypeId::create<kryos::TagComponent>().get_id() ||
+                pool->get_type_hash() == kryos::TypeId::create<kryos::ParentComponent>().get_id())
             {
                 continue;
             }
@@ -187,8 +187,8 @@ void PropertiesEditorWorkspace::on_imgui_update()
                                 "settings", ImGuiTableColumnFlags_WidthFixed,
                                 ImGui::GetContentRegionAvail().x * 0.75f
                             );
-                            const std::set<ogl::MemberInfo>& members =
-                                reflection->get_members(ogl::TypeId(pool->get_type_hash()));
+                            const std::set<kryos::MemberInfo>& members =
+                                reflection->get_members(kryos::TypeId(pool->get_type_hash()));
 
                             StructDrawData data = {};
                             data.object = object;
@@ -212,13 +212,13 @@ void PropertiesEditorWorkspace::on_imgui_update()
         float popup_width = ImGui::GetContentRegionAvail().x;
         if (ImGui::BeginPopup("Add Component"))
         {
-            ogl::ReflectionRegistry* reflection =
-                ogl::Application::get_layer<ogl::ReflectionRegistry>();
+            kryos::ReflectionRegistry* reflection =
+                kryos::Application::get_layer<kryos::ReflectionRegistry>();
             ImGui::BeginChild("List", ImVec2(popup_width, 300));
             {
                 for (const auto& [type, info] : reflection->get_all_type_infos())
                 {
-                    if (info.flags & ogl::TypeInfoFlags_Component)
+                    if (info.flags & kryos::TypeInfoFlags_Component)
                     {
                         if (entity.get_component(type) != nullptr)
                             continue;
@@ -256,18 +256,18 @@ void PropertiesEditorWorkspace::_imgui_draw(StructDrawData& data)
         return;
 
     if (data.it->variable.get_pointer_count() > 2 ||
-        data.it->variable.get_flags() & ogl::VariableFlags_Const ||
-        data.it->flags & ogl::MemberInfoEditorFlag_Hide)
+        data.it->variable.get_flags() & kryos::VariableFlags_Const ||
+        data.it->flags & kryos::MemberInfoEditorFlag_Hide)
     {
         data.it++;
         _imgui_draw(data);
         return;
     }
 
-    const ogl::TypeInfo& info = data.reflection->get_type_info(data.it->type);
-    if (info.flags & ogl::TypeInfoFlags_StdVector)
+    const kryos::TypeInfo& info = data.reflection->get_type_info(data.it->type);
+    if (info.flags & kryos::TypeInfoFlags_StdVector)
         _imgui_draw_vector(data, info);
-    if (info.flags & ogl::TypeInfoFlags_StdArray)
+    if (info.flags & kryos::TypeInfoFlags_StdArray)
     {
     }
     else if (m_draw_fnptrs.contains(data.it->type.get_id()))
@@ -291,7 +291,7 @@ void PropertiesEditorWorkspace::_imgui_draw(StructDrawData& data)
 }
 
 void PropertiesEditorWorkspace::_imgui_draw_vector(
-    StructDrawData& data, const ogl::TypeInfo& vector_inner_type_info
+    StructDrawData& data, const kryos::TypeInfo& vector_inner_type_info
 )
 {
     ImGui::TableNextColumn();
@@ -305,16 +305,16 @@ void PropertiesEditorWorkspace::_imgui_draw_vector(
     );
 
     // There should only be one type for vector
-    ogl::TypeId internal_type =
-        ogl::TypeId(data.reflection->get_templated_internal_types(data.it->type).front());
+    kryos::TypeId internal_type =
+        kryos::TypeId(data.reflection->get_templated_internal_types(data.it->type).front());
 
     if (m_draw_fnptrs.contains(internal_type.get_id()))
     {
-        const ogl::TypeInfo& internal_type_info =
-            data.reflection->get_type_info(ogl::TypeId(internal_type));
+        const kryos::TypeInfo& internal_type_info =
+            data.reflection->get_type_info(kryos::TypeId(internal_type));
 
-        ogl::VectorInternalStructor* internal_structure =
-            reinterpret_cast<ogl::VectorInternalStructor*>(data.object + data.it->offset);
+        kryos::VectorInternalStructor* internal_structure =
+            reinterpret_cast<kryos::VectorInternalStructor*>(data.object + data.it->offset);
         std::size_t vector_size =
             (internal_structure->end - internal_structure->begin) / internal_type_info.size;
 
@@ -360,7 +360,7 @@ void PropertiesEditorWorkspace::_imgui_draw_non_primitive(StructDrawData& data)
 {
     if (data.reflection->type_contains_members(data.it->variable.get_type().get_id()))
     {
-        ogl::MemberInfoEditorFlags flags = data.it->flags;
+        kryos::MemberInfoEditorFlags flags = data.it->flags;
         ImGui::TableNextColumn();
         ImGui::Text(
             "%s (%s)", data.it->fieldname.c_str(),
@@ -370,11 +370,11 @@ void PropertiesEditorWorkspace::_imgui_draw_non_primitive(StructDrawData& data)
 
         if (data.it->variable.is_pointer())
         {
-            if (flags & ogl::MemberInfoEditorFlag_NeverOwnsPtrData)
+            if (flags & kryos::MemberInfoEditorFlag_NeverOwnsPtrData)
             {
                 // TODO: ...
             }
-            else if (flags & ogl::MemberInfoEditorFlag_OwnsPtrData)
+            else if (flags & kryos::MemberInfoEditorFlag_OwnsPtrData)
             {
                 // TODO: ...
             }
@@ -385,7 +385,7 @@ void PropertiesEditorWorkspace::_imgui_draw_non_primitive(StructDrawData& data)
         }
         else
         {
-            const std::set<ogl::MemberInfo>& members = data.reflection->get_members(data.it->type);
+            const std::set<kryos::MemberInfo>& members = data.reflection->get_members(data.it->type);
 
             StructDrawData new_object = {};
             new_object.object = data.object + data.it->offset;

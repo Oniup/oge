@@ -1,8 +1,8 @@
-#ifndef __OGE_GUI_PREFERENCES_HPP__
-#define __OGE_GUI_PREFERENCES_HPP__
+#ifndef __KRYOS_ENGINE_GUI_PREFERENCES_HPP__
+#define __KRYOS_ENGINE_GUI_PREFERENCES_HPP__
 
 #include "utils/utils.hpp"
-#include <ogl/ogl.hpp>
+#include <kryos/kryos.hpp>
 #include <portable-file-dialogs/portable-file-dialogs.h>
 #include <yaml/yaml.hpp>
 
@@ -13,7 +13,7 @@ class Preferences
     inline static const std::string get_preferences_path()
     {
 #ifndef _WIN32
-        return pfd::path::home() + "/.config/oge/preferences.yaml";
+        return pfd::path::home() + "/.config/kryos/preferences.yaml";
 #else
         // TODO: ...
 #endif

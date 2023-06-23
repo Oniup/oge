@@ -35,7 +35,7 @@ void DockingEditorWorkspace::on_imgui_update()
     ImGuiID dock_space_id = ImGui::GetID("DockSpace");
     ImGui::DockSpace(dock_space_id, ImVec2(0.0f, 0.0f), m_dock_node_flags);
     bool scene_loaded =
-        ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene() != nullptr;
+        kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene() != nullptr;
 
     bool open_project_popup = false;
 
@@ -105,13 +105,13 @@ void DockingEditorWorkspace::on_imgui_update()
             }
 
             if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, scene_loaded))
-                ogl::Debug::log("Not Implemented yet", ogl::DebugType_Warning);
+                kryos::Debug::log("Not Implemented yet", kryos::DebugType_Warning);
 
             if (ImGui::MenuItem("Save As", "Ctrl+Shift+S", nullptr, scene_loaded))
             {
-                if (ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene() != nullptr)
+                if (kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene() != nullptr)
                 {
-                    Project* project = ogl::Application::get_layer<Project>();
+                    Project* project = kryos::Application::get_layer<Project>();
                     std::string filename = pfd::save_file(
                                                "Create Scene", project->get_root_path(),
                                                {"Oniup Scene Files", "*.oscene"}
@@ -144,8 +144,8 @@ void DockingEditorWorkspace::on_imgui_update()
             if (ImGui::MenuItem("Preferences"))
             {
                 if (m_workspace->get_panel("Preferences") == nullptr)
-                    ogl::Debug::log(
-                        "Preference settings are coming soon ...", ogl::DebugType_Warning
+                    kryos::Debug::log(
+                        "Preference settings are coming soon ...", kryos::DebugType_Warning
                     );
             }
 

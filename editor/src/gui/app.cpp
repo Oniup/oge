@@ -4,7 +4,7 @@
 #include "gui/properties.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <ogl/renderer/renderer.hpp>
+#include <kryos/renderer/renderer.hpp>
 #include <portable-file-dialogs/portable-file-dialogs.h>
 
 App::App()
@@ -15,15 +15,15 @@ App::App()
     );
 
     // Framebuffers
-    ogl::Pipeline* pipeline = get_application_layer<ogl::Pipeline>();
-    ogl::Window* window = get_application_layer<ogl::Window>();
-    window->set_title("Oniup's Game Editor - No Project Selected");
-    window->set_size(ogl::WindowResolution_Maximize);
-    static_cast<ogl::BasicRenderer*>(pipeline->push_renderer(new ogl::BasicRenderer()))
+    kryos::Pipeline* pipeline = get_application_layer<kryos::Pipeline>();
+    kryos::Window* window = get_application_layer<kryos::Window>();
+    window->set_title("Kryos - No Project Selected");
+    window->set_size(kryos::WindowResolution_Maximize);
+    static_cast<kryos::BasicRenderer*>(pipeline->push_renderer(new kryos::BasicRenderer()))
         ->use_default_framebuffer(false);
 
     // Debug Logger
-    ogl::Debug* debug = get_application_layer<ogl::Debug>();
+    kryos::Debug* debug = get_application_layer<kryos::Debug>();
     debug->set_automatically_clear_on_update(false);
     debug->set_serialize(true);
 
@@ -43,6 +43,8 @@ App::App()
         static_cast<HierarchyEditorWorkspace*>(workspace->get_panel("Hierarchy"))
     );
 
-    // get_application_layer<ogl::ReflectionRegistry>()->log_all_detailed_types();
-    get_application_layer<ogl::ReflectionRegistry>()->log_all_templated_types();
-}
+    // get_application_layer<kryos::ReflectionRegistry>()->log_all_detailed_types();
+    get_application_layer<kryos::ReflectionRegistry>()->log_all_templated_types();
+
+    std::cout << ecs::type_descriptor::get_wrapped_type_name<double>();
+};

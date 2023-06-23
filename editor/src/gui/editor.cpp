@@ -40,27 +40,34 @@ EditorWorkspace::EditorWorkspace()
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-    ImGui_ImplGlfw_InitForOpenGL(ogl::Application::get_layer<ogl::Window>()->get_internal(), true);
+    ImGui_ImplGlfw_InitForOpenGL(
+        kryos::Application::get_layer<kryos::Window>()->get_internal(), true
+    );
     ImGui_ImplOpenGL3_Init("#version 450");
 
     // Settings Preferences
 
-    std::string settings_path = pfd::path::home() + "/.config/oge";
-    if (!std::filesystem::exists(settings_path))
+#if defined(_MSC_VER)
+    // TODO: ...
+#else
+    std::string config_path = pfd::path::home() + "/.config/kryos";
+#endif
+
+    if (!std::filesystem::exists(config_path))
     {
-        std::filesystem::create_directory(settings_path);
+        std::filesystem::create_directory(config_path);
 
         // Create preference config file and its default for backup
         std::filesystem::copy_file(
-            "editor/assets/default_settings/preferences.yaml", settings_path + "/preferences.yaml"
+            "editor/assets/default_settings/preferences.yaml", config_path + "/preferences.yaml"
         );
         std::filesystem::copy_file(
             "editor/assets/default_settings/preferences.yaml",
-            settings_path + "/default_preferences.yaml"
+            config_path + "/default_preferences.yaml"
         );
 
         // Pushing the 2 default layouts
-        std::string layouts_path = settings_path + "/layouts";
+        std::string layouts_path = config_path + "/layouts";
         std::filesystem::create_directory(layouts_path);
         std::filesystem::copy_file(
             "editor/assets/default_settings/layout1.ini", layouts_path + "/layout1.ini"
@@ -70,7 +77,7 @@ EditorWorkspace::EditorWorkspace()
         );
     }
 
-    std::string path = settings_path + "/preferences.yaml";
+    std::string path = config_path + "/preferences.yaml";
     yaml::Node preferences = yaml::open(path);
     yaml::Node& ui = preferences["EditorUI"];
 
@@ -80,9 +87,9 @@ EditorWorkspace::EditorWorkspace()
 
         std::string default_layout = ui["Layout"].as<std::string>();
         if (!std::filesystem::copy_file(
-                settings_path + "/layouts/" + default_layout + ".ini", "imgui.ini"
+                config_path + "/layouts/" + default_layout + ".ini", "imgui.ini"
             ))
-            ogl::Debug::log("Failed to load editor layout", ogl::DebugType_Error);
+            kryos::Debug::log("Failed to load editor layout", kryos::DebugType_Error);
     }
 
     io.FontDefault =
@@ -215,21 +222,26 @@ void EditorWorkspace::_load_styles(yaml::Node& styles)
 /******************************** Base Windows ********************************/
 /******************************************************************************/
 
-ConsoleEditorWorkspace::ConsoleEditorWorkspace(ogl::Debug* debug)
+ConsoleEditorWorkspace::ConsoleEditorWorkspace(kryos::Debug* debug)
     : PanelEditorWorkspaceBase("Console")
 {
     std::string names[] = {"Messages", "Warnings", "Errors", "Fatal Errors", "Inits", "Terminate"};
-    for (std::size_t i = 0; i < ogl::debug_type_count; i++)
+    for (std::size_t i = 0; i < kryos::debug_type_count; i++)
     {
         std::get<bool>(m_filters[i]) = true;
         std::get<std::string>(m_filters[i]) = std::move(names[i]);
     }
 
-    std::string settings_path = pfd::path::home() + "/.config/oge/preferences.yaml";
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
 
-    yaml::Node preferences = yaml::open(settings_path);
+#if defined(_MSC_VER)
+    // TODO: ...
+#else
+    std::string preferences_path = pfd::path::home() + "/.config/kryos/preferences.yaml";
+#endif
+
+    yaml::Node preferences = yaml::open(preferences_path);
     m_font = io.Fonts->AddFontFromFileTTF(
         preferences["EditorUI"].get_child("FontMono").as<std::string>().c_str(), 18.0f
     );
@@ -256,9 +268,9 @@ void ConsoleEditorWorkspace::on_imgui_update()
             ImGui::MenuItem("Auto-Scrolling", nullptr, &m_auto_scrolling);
             if (ImGui::MenuItem("Log Tests"))
             {
-                ogl::Debug::log("Test Message");
-                ogl::Debug::log("Test Warning Message", ogl::DebugType_Warning);
-                ogl::Debug::log("Test Error Message", ogl::DebugType_Error);
+                kryos::Debug::log("Test Message");
+                kryos::Debug::log("Test Warning Message", kryos::DebugType_Warning);
+                kryos::Debug::log("Test Error Message", kryos::DebugType_Error);
             }
             ImGui::EndMenu();
         }
@@ -269,14 +281,14 @@ void ConsoleEditorWorkspace::on_imgui_update()
 
     ImGui::PushFont(m_font);
 
-    for (const std::tuple<ogl::DebugType, std::string, float>& log : m_debug->get_logs())
+    for (const std::tuple<kryos::DebugType, std::string, float>& log : m_debug->get_logs())
     {
-        if (std::get<bool>(m_filters[static_cast<std::size_t>(std::get<ogl::DebugType>(log))]))
+        if (std::get<bool>(m_filters[static_cast<std::size_t>(std::get<kryos::DebugType>(log))]))
         {
             std::string prefix{};
-            switch (std::get<ogl::DebugType>(log))
+            switch (std::get<kryos::DebugType>(log))
             {
-            case ogl::DebugType_Warning:
+            case kryos::DebugType_Warning:
                 prefix = "[Warning (" + std::to_string(std::get<float>(log)) + ")]: ";
                 ImGui::PushStyleColor(
                     ImGuiCol_Text, ImVec4(
@@ -286,7 +298,7 @@ void ConsoleEditorWorkspace::on_imgui_update()
                 );
                 break;
                 prefix = "[Warning (" + std::to_string(std::get<float>(log)) + ")]: ";
-            case ogl::DebugType_Error:
+            case kryos::DebugType_Error:
                 prefix = "[Error (" + std::to_string(std::get<float>(log)) + ")]: ";
                 ImGui::PushStyleColor(
                     ImGuiCol_Text, ImVec4(
@@ -295,13 +307,13 @@ void ConsoleEditorWorkspace::on_imgui_update()
                                    )
                 );
                 break;
-            case ogl::DebugType_Message:
+            case kryos::DebugType_Message:
                 prefix = "[Message (" + std::to_string(std::get<float>(log)) + ")]: ";
                 break;
             }
 
             ImGui::TextWrapped("%s", std::string(prefix + std::get<std::string>(log)).c_str());
-            if (std::get<ogl::DebugType>(log) != ogl::DebugType_Message)
+            if (std::get<kryos::DebugType>(log) != kryos::DebugType_Message)
                 ImGui::PopStyleColor();
         }
     }

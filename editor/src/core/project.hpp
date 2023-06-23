@@ -1,9 +1,9 @@
-#ifndef __OGE_CORE_PROJECT_HPP__
-#define __OGE_CORE_PROJECT_HPP__
+#ifndef __KRYOS_ENGINE_CORE_PROJECT_HPP__
+#define __KRYOS_ENGINE_CORE_PROJECT_HPP__
 
-#include <ogl/ogl.hpp>
+#include <kryos/kryos.hpp>
 
-class Project : public ogl::ApplicationLayer
+class Project : public kryos::ApplicationLayer
 {
   public:
     inline static Project* get() { return m_Instance; }
@@ -25,7 +25,7 @@ class Project : public ogl::ApplicationLayer
     bool create(const std::string& name, const std::string& project_root_path, bool is_3d_based);
     bool load(const std::string& project_filename);
     void serialize(const std::string& filename, bool use_scene_name);
-    void deserialize(ogl::Scene* scene, const std::string& filename);
+    void deserialize(kryos::Scene* scene, const std::string& filename);
 
   private:
     static Project* m_Instance;

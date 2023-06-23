@@ -1,10 +1,10 @@
-#ifndef __OGE_CORE_EDITOR_HPP__
-#define __OGE_CORE_EDITOR_HPP__
+#ifndef __KRYOS_ENGINE_CORE_EDITOR_HPP__
+#define __KRYOS_ENGINE_CORE_EDITOR_HPP__
 
-#include <ogl/ogl.hpp>
+#include <kryos/kryos.hpp>
 #include <yaml/yaml.hpp>
 
-#define HIERARCHY_FILTER_NAME "@oge_editor"
+#define HIERARCHY_FILTER_NAME "@kryos_editor"
 
 #define PREF_NAME_SIZE 32
 
@@ -38,7 +38,7 @@ class PanelEditorWorkspaceBase
     bool m_remove_when_disabled = false;
 };
 
-class EditorWorkspace : public ogl::ApplicationLayer
+class EditorWorkspace : public kryos::ApplicationLayer
 {
   public:
     EditorWorkspace();
@@ -98,20 +98,20 @@ class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase
     virtual void on_imgui_update() override;
 
   private:
-    void _draw_entity(ogl::Entity entity, ecs::Entity& entity_clicked, bool& opened_popup);
+    void _draw_entity(kryos::Entity entity, ecs::Entity& entity_clicked, bool& opened_popup);
     void _create_shape(
-        const std::string& new_entity_name, const std::string& mesh_file_path, ogl::Entity* parent
+        const std::string& new_entity_name, const std::string& mesh_file_path, kryos::Entity* parent
     );
-    void _popup_menu(ogl::Entity* entity = nullptr);
+    void _popup_menu(kryos::Entity* entity = nullptr);
 
     ecs::Entity m_selected_entity = ECS_ENTITY_DESTROYED;
-    std::vector<ogl::Entity> m_deleted_entity = {};
+    std::vector<kryos::Entity> m_deleted_entity = {};
 };
 
 class ConsoleEditorWorkspace : public PanelEditorWorkspaceBase
 {
   public:
-    ConsoleEditorWorkspace(ogl::Debug* debug);
+    ConsoleEditorWorkspace(kryos::Debug* debug);
     virtual ~ConsoleEditorWorkspace() override = default;
 
     virtual void on_imgui_update() override;
@@ -119,9 +119,9 @@ class ConsoleEditorWorkspace : public PanelEditorWorkspaceBase
   private:
     glm::vec4 m_debug_colors[2] = {
         glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)};
-    std::tuple<bool, std::string> m_filters[ogl::debug_type_count] = {};
+    std::tuple<bool, std::string> m_filters[kryos::debug_type_count] = {};
     bool m_auto_scrolling = true;
-    ogl::Debug* m_debug = nullptr;
+    kryos::Debug* m_debug = nullptr;
     ImFont* m_font = nullptr;
 };
 
@@ -137,18 +137,18 @@ class AssetsEditorWorkspace : public PanelEditorWorkspaceBase
 class ViewportEditorWorkspace : public PanelEditorWorkspaceBase
 {
   public:
-    ViewportEditorWorkspace(ogl::Framebuffer* framebuffer);
+    ViewportEditorWorkspace(kryos::Framebuffer* framebuffer);
     virtual ~ViewportEditorWorkspace() override = default;
 
     virtual void on_imgui_update() override;
 
   private:
-    void _camera_controller(ogl::CameraComponent* camera);
-    void _no_scene(ogl::CameraComponent* camera, float window_width, float window_height);
+    void _camera_controller(kryos::CameraComponent* camera);
+    void _no_scene(kryos::CameraComponent* camera, float window_width, float window_height);
     void _no_project();
 
     glm::ivec2 m_last_required_framebuffer_size = {};
-    ogl::Framebuffer* m_framebuffer = nullptr;
+    kryos::Framebuffer* m_framebuffer = nullptr;
 
     float m_camera_move_speed = 5.0f;
     glm::vec2 m_camera_sensitivity = {0.05f, 0.05f};

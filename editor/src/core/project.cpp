@@ -13,7 +13,7 @@ void Project::create_new_popup()
 {
     if (ImGui::BeginPopupModal("Create Project", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ogl::Window* window = ogl::Application::get_layer<ogl::Window>();
+        kryos::Window* window = kryos::Application::get_layer<kryos::Window>();
         ImVec2 window_size = ImVec2(
             static_cast<float>(window->get_width()) * 0.2f,
             static_cast<float>(window->get_height()) * 0.2f
@@ -144,12 +144,12 @@ bool Project::create(
     if (project_root_path[project_root_path.size() - 1] == '/')
     {
         m_root_path += m_name + "/";
-        m_project_filename = m_root_path + m_name + ".oproject";
+        m_project_filename = m_root_path + m_name + ".kryosproject";
     }
     else
     {
         m_root_path += "/" + m_name + "/";
-        m_project_filename = m_root_path + m_name + ".oproject";
+        m_project_filename = m_root_path + m_name + ".kryosproject";
     }
 
     if (std::filesystem::create_directory(m_root_path))
@@ -160,7 +160,7 @@ bool Project::create(
 
         if (yaml::write(root, m_project_filename))
         {
-            ogl::Application::get_layer<ogl::Window>()->set_title("Oniups Game Editor - " + m_name);
+            kryos::Application::get_layer<kryos::Window>()->set_title("Kryos - " + m_name);
 
             yaml::Node preferences = Preferences::get_preferences();
             yaml::Node& project_node = preferences["Project"];
@@ -173,16 +173,16 @@ bool Project::create(
             return true;
         }
         else
-            ogl::Debug::log(
+            kryos::Debug::log(
                 "Failed to create project: cannot write project yaml file to '" +
                     m_project_filename = "'",
-                ogl::DebugType_Error
+                kryos::DebugType_Error
             );
     }
     else
-        ogl::Debug::log(
+        kryos::Debug::log(
             "Failed to create project: cannot create directory '" + m_root_path + "'",
-            ogl::DebugType_Error
+            kryos::DebugType_Error
         );
 
     m_name.clear();
@@ -202,7 +202,7 @@ bool Project::load(const std::string& project_filename)
         m_root_path = std::string(project_filename.c_str(), project_filename.find_last_of('/'));
         m_unsaved = false;
 
-        ogl::Application::get_layer<ogl::Window>()->set_title("Oniups Game Editor - " + m_name);
+        kryos::Application::get_layer<kryos::Window>()->set_title("Kryos - " + m_name);
 
         if (root["SceneCount"].as<std::size_t>() > 0)
             // TODO: load scenes
@@ -217,11 +217,11 @@ void Project::serialize(const std::string& filename, bool use_scene_name)
     yaml::Node project_node = yaml::open(m_project_filename);
     if (!project_node.empty())
     {
-        ogl::SerializableTypeHandler* handler =
-            ogl::Application::get_layer<ogl::SerializableTypeHandler>();
-        ogl::SceneManager* scene_manager = ogl::Application::get_layer<ogl::SceneManager>();
+        kryos::SerializableTypeHandler* handler =
+            kryos::Application::get_layer<kryos::SerializableTypeHandler>();
+        kryos::SceneManager* scene_manager = kryos::Application::get_layer<kryos::SceneManager>();
 
-        ogl::Scene* scene = scene_manager->get_active_scene();
+        kryos::Scene* scene = scene_manager->get_active_scene();
         if (!use_scene_name)
         {
             std::size_t name_offset = filename.find_last_of('/') + 1;
@@ -243,7 +243,9 @@ void Project::serialize(const std::string& filename, bool use_scene_name)
         project_node.write_file(m_project_filename);
     }
     else
-        ogl::Debug::log("Cannot serialize scene, cannot open Project file", ogl::DebugType_Error);
+        kryos::Debug::log(
+            "Cannot serialize scene, cannot open Project file", kryos::DebugType_Error
+        );
 }
 
-void Project::deserialize(ogl::Scene* scene, const std::string& filename) {}
+void Project::deserialize(kryos::Scene* scene, const std::string& filename) {}

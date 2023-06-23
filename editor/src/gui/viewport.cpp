@@ -7,13 +7,13 @@
 #include <imgui/imgui_internal.h>
 #include <portable-file-dialogs/portable-file-dialogs.h>
 
-ViewportEditorWorkspace::ViewportEditorWorkspace(ogl::Framebuffer* framebuffer)
+ViewportEditorWorkspace::ViewportEditorWorkspace(kryos::Framebuffer* framebuffer)
     : PanelEditorWorkspaceBase("Viewport")
 {
     if (framebuffer != nullptr)
         m_framebuffer = framebuffer;
     else
-        ogl::Debug::log("Viewport::Viewport(ogl::Framebuffer*) -> failed to create "
+        kryos::Debug::log("Viewport::Viewport(kryos::Framebuffer*) -> failed to create "
                         "viewport as framebuffer is nullptr");
 }
 
@@ -28,12 +28,12 @@ void ViewportEditorWorkspace::on_imgui_update()
     {
         ImGui::PopStyleVar();
 
-        ogl::Scene* scene = ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene();
-        ogl::CameraComponent* editor_camera = nullptr;
+        kryos::Scene* scene = kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene();
+        kryos::CameraComponent* editor_camera = nullptr;
 
         if (scene != nullptr)
         {
-            auto view = ecs::View<ogl::CameraComponent, ogl::TagComponent>(&scene->get_registry());
+            auto view = ecs::View<kryos::CameraComponent, kryos::TagComponent>(&scene->get_registry());
             for (ecs::Entity entity : view)
             {
                 if (view.has_required(entity))
@@ -70,13 +70,13 @@ void ViewportEditorWorkspace::on_imgui_update()
                         window_size.y != m_framebuffer->size.y)
                     {
                         m_framebuffer =
-                            ogl::Application::get_layer<ogl::Pipeline>()->recreate_framebuffer(
+                            kryos::Application::get_layer<kryos::Pipeline>()->recreate_framebuffer(
                                 m_framebuffer, static_cast<int>(window_size.x),
                                 static_cast<int>(window_size.y)
                             );
                         if (m_framebuffer == nullptr)
                         {
-                            ogl::Debug::log("Viewport::on_imgui_update() -> failed to resize "
+                            kryos::Debug::log("Viewport::on_imgui_update() -> failed to resize "
                                             "framebuffer size");
                             return;
                         }
@@ -102,46 +102,46 @@ void ViewportEditorWorkspace::on_imgui_update()
     ImGui::End();
 }
 
-void ViewportEditorWorkspace::_camera_controller(ogl::CameraComponent* camera)
+void ViewportEditorWorkspace::_camera_controller(kryos::CameraComponent* camera)
 {
-    glm::vec2 mouse_position = ogl::Input::get_mouse_position();
+    glm::vec2 mouse_position = kryos::Input::get_mouse_position();
     static glm::vec2 last_mouse_position = mouse_position;
 
     if (camera != nullptr)
     {
-        if (ogl::Input::pressed_key(ogl::InputKeyCode_LeftShift))
+        if (kryos::Input::pressed_key(kryos::InputKeyCode_LeftShift))
         {
-            if (ogl::Input::pressed_mousebutton(ogl::InputMouseButton_Right))
+            if (kryos::Input::pressed_mousebutton(kryos::InputMouseButton_Right))
             {
                 constexpr float increase_speed = 0.3f;
                 m_camera_move_speed = m_camera_move_speed +
-                                      (increase_speed * ogl::Input::get_mouse_scroll_direction());
+                                      (increase_speed * kryos::Input::get_mouse_scroll_direction());
                 if (m_camera_move_speed < 0.0f)
                     m_camera_move_speed = 0.0f;
 
-                if (ogl::Input::pressed_key(ogl::InputKeyCode_S))
+                if (kryos::Input::pressed_key(kryos::InputKeyCode_S))
                     camera->position -=
-                        m_camera_move_speed * camera->forward * ogl::Time::get_delta();
+                        m_camera_move_speed * camera->forward * kryos::Time::get_delta();
 
-                if (ogl::Input::pressed_key(ogl::InputKeyCode_W))
+                if (kryos::Input::pressed_key(kryos::InputKeyCode_W))
                     camera->position +=
-                        m_camera_move_speed * camera->forward * ogl::Time::get_delta();
+                        m_camera_move_speed * camera->forward * kryos::Time::get_delta();
 
-                if (ogl::Input::pressed_key(ogl::InputKeyCode_D))
+                if (kryos::Input::pressed_key(kryos::InputKeyCode_D))
                     camera->position -= m_camera_move_speed *
                                         glm::cross(camera->forward, camera->up) *
-                                        ogl::Time::get_delta();
+                                        kryos::Time::get_delta();
 
-                if (ogl::Input::pressed_key(ogl::InputKeyCode_A))
+                if (kryos::Input::pressed_key(kryos::InputKeyCode_A))
                     camera->position += m_camera_move_speed *
                                         glm::cross(camera->forward, camera->up) *
-                                        ogl::Time::get_delta();
+                                        kryos::Time::get_delta();
 
-                if (ogl::Input::pressed_key(ogl::InputKeyCode_Q))
-                    camera->position.y -= m_camera_move_speed * ogl::Time::get_delta();
+                if (kryos::Input::pressed_key(kryos::InputKeyCode_Q))
+                    camera->position.y -= m_camera_move_speed * kryos::Time::get_delta();
 
-                if (ogl::Input::pressed_key(ogl::InputKeyCode_E))
-                    camera->position.y += m_camera_move_speed * ogl::Time::get_delta();
+                if (kryos::Input::pressed_key(kryos::InputKeyCode_E))
+                    camera->position.y += m_camera_move_speed * kryos::Time::get_delta();
                 glm::vec2 mouse_movement = last_mouse_position - mouse_position;
 
                 mouse_movement *= 0.05f;
@@ -163,7 +163,7 @@ void ViewportEditorWorkspace::_camera_controller(ogl::CameraComponent* camera)
 }
 
 void ViewportEditorWorkspace::_no_scene(
-    ogl::CameraComponent* editor_camera, float window_width, float window_height
+    kryos::CameraComponent* editor_camera, float window_width, float window_height
 )
 {
     ImVec2 text_size = ImGui::CalcTextSize("Create Empty Scene");
@@ -172,19 +172,19 @@ void ViewportEditorWorkspace::_no_scene(
 
     if (ImGui::Button("Create Empty Scene"))
     {
-        ogl::Application::get_layer<ogl::SceneManager>()->set_active(
-            ogl::Application::get_layer<ogl::SceneManager>()->push("Empty Scene")
+        kryos::Application::get_layer<kryos::SceneManager>()->set_active(
+            kryos::Application::get_layer<kryos::SceneManager>()->push("Empty Scene")
         );
 
         // Create Editor Camera for new scene
-        ogl::Entity entity = ogl::Entity(true);
-        entity.add_component<ogl::TagComponent>(HIERARCHY_FILTER_NAME);
+        kryos::Entity entity = kryos::Entity(true);
+        entity.add_component<kryos::TagComponent>(HIERARCHY_FILTER_NAME);
 
-        editor_camera = entity.add_component<ogl::CameraComponent>();
+        editor_camera = entity.add_component<kryos::CameraComponent>();
         editor_camera->clear_color = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
         editor_camera->is_main = true;
         // TODO: Set to Orthographic if in 2D mode
-        editor_camera->projection_type = ogl::CameraProjection_Perspective;
+        editor_camera->projection_type = kryos::CameraProjection_Perspective;
         Project::get()->unsaved() = true;
     }
 }
@@ -216,7 +216,7 @@ void ViewportEditorWorkspace::_no_project()
                 std::vector<std::string> files =
                     pfd::open_file(
                         "Open Project", pfd::path::home(),
-                        {"Oniups Game Engine Project File (.oproject)", "*.oproject"}
+                        {"Kryos Project File (.kryosproject)", "*.kryosproject"}
                     )
                         .result();
                 if (files.size() > 0)

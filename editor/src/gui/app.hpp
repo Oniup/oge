@@ -1,9 +1,9 @@
-#ifndef __OGE_CORE_APP_HPP__
-#define __OGE_CORE_APP_HPP__
+#ifndef __KRYOS_ENGINE_CORE_APP_HPP__
+#define __KRYOS_ENGINE_CORE_APP_HPP__
 
-#include <ogl/ogl.hpp>
+#include <kryos/kryos.hpp>
 
-class App : public ogl::Application
+class App : public kryos::Application
 {
   public:
     App();

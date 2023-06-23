@@ -3,7 +3,7 @@
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
-#include <ogl/ogl.hpp>
+#include <kryos/kryos.hpp>
 
 struct ImGuiHelper
 {

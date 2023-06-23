@@ -8,7 +8,7 @@ void HierarchyEditorWorkspace::on_imgui_update()
 {
     ImGui::Begin(get_name().c_str(), &get_enabled());
 
-    ogl::Scene* active_scene = ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene();
+    kryos::Scene* active_scene = kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene();
     if (active_scene != nullptr)
     {
         ecs::Registry& registry = active_scene->get_registry();
@@ -18,10 +18,10 @@ void HierarchyEditorWorkspace::on_imgui_update()
         bool opened_targeted_entity_popup = false;
         for (std::size_t i = 0; i < entities.size(); i++)
         {
-            ogl::Entity entity = ogl::Entity(entities[i]);
+            kryos::Entity entity = kryos::Entity(entities[i]);
             if (entity)
             {
-                ogl::TagComponent* tag = entity.get_component<ogl::TagComponent>();
+                kryos::TagComponent* tag = entity.get_component<kryos::TagComponent>();
                 bool include_ent = true;
                 if (tag != nullptr)
                 {
@@ -58,7 +58,7 @@ void HierarchyEditorWorkspace::on_imgui_update()
 }
 
 void HierarchyEditorWorkspace::_draw_entity(
-    ogl::Entity entity, ecs::Entity& entity_clicked, bool& opened_popup
+    kryos::Entity entity, ecs::Entity& entity_clicked, bool& opened_popup
 )
 {
     int flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
@@ -66,7 +66,7 @@ void HierarchyEditorWorkspace::_draw_entity(
     if (m_selected_entity == entity)
         flags |= ImGuiTreeNodeFlags_Selected;
 
-    ogl::NameComponent* name = entity.get_component<ogl::NameComponent>();
+    kryos::NameComponent* name = entity.get_component<kryos::NameComponent>();
     std::string str = "Entity";
     if (name != nullptr)
         str = name->name;
@@ -86,15 +86,15 @@ void HierarchyEditorWorkspace::_draw_entity(
 }
 
 void HierarchyEditorWorkspace::_create_shape(
-    const std::string& new_entity_name, const std::string& mesh_file_path, ogl::Entity* parent
+    const std::string& new_entity_name, const std::string& mesh_file_path, kryos::Entity* parent
 )
 {
-    ogl::Entity entity{};
-    ogl::NameComponent* name = entity.add_component<ogl::NameComponent>(new_entity_name);
+    kryos::Entity entity{};
+    kryos::NameComponent* name = entity.add_component<kryos::NameComponent>(new_entity_name);
 
-    ogl::MeshRendererComponent* mesh_renderer = entity.add_component<ogl::MeshRendererComponent>();
-    mesh_renderer->model = ogl::Application::get_layer<ogl::AssetHandler>()->load_model_into_memory(
-        mesh_file_path, ogl::ModelFileType_Obj
+    kryos::MeshRendererComponent* mesh_renderer = entity.add_component<kryos::MeshRendererComponent>();
+    mesh_renderer->model = kryos::Application::get_layer<kryos::AssetHandler>()->load_model_into_memory(
+        mesh_file_path, kryos::ModelFileType_Obj
     );
 
     if (parent != nullptr)
@@ -103,25 +103,25 @@ void HierarchyEditorWorkspace::_create_shape(
     }
 }
 
-void HierarchyEditorWorkspace::_popup_menu(ogl::Entity* entity)
+void HierarchyEditorWorkspace::_popup_menu(kryos::Entity* entity)
 {
-    ogl::Scene* scene = ogl::Application::get_layer<ogl::SceneManager>()->get_active_scene();
+    kryos::Scene* scene = kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene();
 
     if (scene != nullptr)
     {
         if (ImGui::BeginMenu("New"))
         {
             if (ImGui::MenuItem("Entity"))
-                ogl::Entity creating{};
+                kryos::Entity creating{};
 
             if (ImGui::BeginMenu("Shape"))
             {
                 if (ImGui::MenuItem("Cube"))
-                    _create_shape("Cube", "ogl/assets/models/cube", entity);
+                    _create_shape("Cube", "kryos-lib/assets/models/cube", entity);
                 if (ImGui::MenuItem("Sphere"))
-                    _create_shape("Sphere", "ogl/assets/models/sphere", entity);
+                    _create_shape("Sphere", "kryos-lib/assets/models/sphere", entity);
                 if (ImGui::MenuItem("Plane"))
-                    _create_shape("Plane", "ogl/assets/models/plane", entity);
+                    _create_shape("Plane", "kryos-lib/assets/models/plane", entity);
                 ImGui::EndMenu();
             }
             ImGui::EndMenu();
