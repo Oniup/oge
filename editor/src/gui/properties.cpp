@@ -76,6 +76,7 @@ void ivec4_draw(const std::string& fieldname, void* ptr, float step_size)
 PropertiesEditorWorkspace::PropertiesEditorWorkspace(HierarchyEditorWorkspace* hierarchy)
     : PanelEditorWorkspaceBase("Properties"), m_hierarchy(hierarchy)
 {
+    // PERFORMANCE: probably be better if this constexpr
     _initialize_draw_fnptrs({
         {ogl::TypeId::create<std::int32_t>().get_id(), int_draw},
         {ogl::TypeId::create<std::int64_t>().get_id(), int_draw},
@@ -219,19 +220,19 @@ void PropertiesEditorWorkspace::on_imgui_update()
             {
                 for (const auto& [type, info] : reflection->get_all_type_infos())
                 {
-                    if (type == ogl::TypeId::create<ogl::NameComponent>().get_id() ||
-                        type == ogl::TypeId::create<ogl::TagComponent>().get_id() ||
-                        type == ogl::TypeId::create<ogl::ParentComponent>().get_id())
+                    if (info.flags & ogl::TypeInfoFlags_Component)
                     {
-                        continue;
-                    }
-                    else if (entity.get_component(type) != nullptr)
-                        continue;
+                        if (entity.get_component(type) != nullptr)
+                            continue;
 
-                    if (ImGui::Button(
-                            info.name.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0)
-                        ))
-                        entity.add_component(reflection, type);
+                        if (ImGui::Button(
+                                info.name.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0)
+                            ))
+                        {
+                            entity.add_component(reflection, type);
+                            break;
+                        }
+                    }
                 }
             }
             ImGui::EndChild();
@@ -252,19 +253,18 @@ void PropertiesEditorWorkspace::_initialize_draw_fnptrs(
 
 void PropertiesEditorWorkspace::_imgui_draw(StructDrawData& data)
 {
-    // Not going to deal with pointers higher than 2
-    if (data.it->variable.get_pointer_count() > 2)
-        return;
-
+    // NOTE: Not going to deal with pointers higher than 2, dealing with single pointer is enough
     if (data.it == data.end)
         return;
 
-    if (data.it->variable.get_flags() & ogl::VariableFlags_Const)
+    if (data.it->variable.get_pointer_count() > 2 ||
+        data.it->variable.get_flags() & ogl::VariableFlags_Const ||
+        data.it->flags & ogl::MemberInfoEditorFlag_Hide)
+    {
+        data.it++;
+        _imgui_draw(data);
         return;
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", data.it->fieldname.c_str());
-    ImGui::TableNextColumn();
+    }
 
     const ogl::TypeInfo& info = data.reflection->get_type_info(data.it->type);
     if (info.flags & ogl::TypeInfoFlags_StdVector)
@@ -274,6 +274,11 @@ void PropertiesEditorWorkspace::_imgui_draw(StructDrawData& data)
     }
     else if (m_draw_fnptrs.contains(data.it->type.get_id()))
     {
+        ImGui::TableNextColumn();
+        ImGui::Text("%s", data.it->fieldname.c_str());
+        ImGui::TableNextColumn();
+
+        // Primitive type that can easly be printed
         fnptr_imgui_draw_property fnptr = m_draw_fnptrs[data.it->type.get_id()];
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
         fnptr(data.it->fieldname, static_cast<void*>(data.object + data.it->offset), m_step_size);
@@ -284,14 +289,17 @@ void PropertiesEditorWorkspace::_imgui_draw(StructDrawData& data)
         _imgui_draw(data);
     }
     else
-    {
-    }
+        _imgui_draw_non_primitive(data);
 }
 
 void PropertiesEditorWorkspace::_imgui_draw_vector(
     StructDrawData& data, const ogl::TypeInfo& vector_inner_type_info
 )
 {
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", data.it->fieldname.c_str());
+    ImGui::TableNextColumn();
+
     assert(
         data.reflection->is_templated_type(data.it->type) &&
         "Attempted to create vector property in editor, however type is not in the "
@@ -299,26 +307,62 @@ void PropertiesEditorWorkspace::_imgui_draw_vector(
     );
 
     // There should only be one type for vector
-    std::uint64_t internal_type =
-        data.reflection->get_templated_internal_types(data.it->type).front();
+    ogl::TypeId internal_type =
+        ogl::TypeId(data.reflection->get_templated_internal_types(data.it->type).front());
 
-    if (m_draw_fnptrs.contains(internal_type))
+    if (m_draw_fnptrs.contains(internal_type.get_id()))
     {
-        // TODO: ...
+        const ogl::TypeInfo& internal_type_info =
+            data.reflection->get_type_info(ogl::TypeId(internal_type));
+
+        ogl::VectorInternalStructor* internal_structure =
+            reinterpret_cast<ogl::VectorInternalStructor*>(data.object + data.it->offset);
+        std::size_t vector_size =
+            (internal_structure->end - internal_structure->begin) / internal_type_info.size;
+
+        // Printing the vector
+        if (vector_size > 0)
+        {
+            ImGui::TableNextRow();
+
+            fnptr_imgui_draw_property fnptr = m_draw_fnptrs[internal_type.get_id()];
+            for (std::size_t i = 0; i < vector_size; i++)
+            {
+                ImGui::TableNextColumn();
+                std::string number_str = "(" + std::to_string(i) + ")";
+                float number_str_size = ImGui::CalcTextSize(number_str.c_str()).x;
+                ImGui::SetCursorPosX(
+                    ImGui::GetCursorPosX() + ImGui::GetColumnWidth() - number_str_size
+                );
+
+                ImGui::Text("%s", number_str.c_str());
+                ImGui::TableNextColumn();
+
+                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+                fnptr(
+                    data.it->fieldname + std::to_string(i),
+                    internal_structure->begin + (internal_type_info.size * i), m_step_size
+                );
+                ImGui::PopItemWidth();
+            }
+        }
 
         ImGui::TableNextRow();
         data.it++;
         _imgui_draw(data);
     }
     else
-        ImGui::Text("%s not supported editable type", vector_inner_type_info.name.c_str());
+        ImGui::Text(
+            "%s not supported editable type, structures will come soon",
+            vector_inner_type_info.name.c_str()
+        );
 }
 
-void PropertiesEditorWorkspace::_imgui_draw_struct(StructDrawData& data)
+void PropertiesEditorWorkspace::_imgui_draw_non_primitive(StructDrawData& data)
 {
-    // TODO: Check for pointers types as it fucks with it
     if (data.reflection->type_contains_members(data.it->variable.get_type().get_id()))
     {
+        ogl::MemberInfoEditorFlags flags = data.it->flags;
         ImGui::TableNextColumn();
         ImGui::Text(
             "%s (%s)", data.it->fieldname.c_str(),
@@ -328,7 +372,14 @@ void PropertiesEditorWorkspace::_imgui_draw_struct(StructDrawData& data)
 
         if (data.it->variable.is_pointer())
         {
-            // TODO: ...
+            if (flags & ogl::MemberInfoEditorFlag_NeverOwnsPtrData)
+            {
+                // TODO: ...
+            }
+            else if (flags & ogl::MemberInfoEditorFlag_OwnsPtrData)
+            {
+                // TODO: ...
+            }
         }
         else if (data.it->variable.is_array())
         {

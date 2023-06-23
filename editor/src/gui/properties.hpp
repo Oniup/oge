@@ -32,7 +32,7 @@ class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase
     );
     void _imgui_draw(StructDrawData& data);
     void _imgui_draw_vector(StructDrawData& data, const ogl::TypeInfo& vector_inner_type_info);
-    void _imgui_draw_struct(StructDrawData& data);
+    void _imgui_draw_non_primitive(StructDrawData& data);
 
     HierarchyEditorWorkspace* m_hierarchy = nullptr;
     std::unordered_map<std::uint64_t, fnptr_imgui_draw_property> m_draw_fnptrs = {};
