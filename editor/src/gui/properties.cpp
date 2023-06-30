@@ -128,7 +128,8 @@ void PropertiesEditorWorkspace::on_imgui_update()
     if (m_hierarchy->get_selected_entity() != ECS_ENTITY_DESTROYED)
     {
         kryos::Entity entity = m_hierarchy->get_selected_entity();
-        kryos::Scene* scene = kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene();
+        kryos::Scene* scene =
+            kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene();
         kryos::ReflectionRegistry* reflection =
             kryos::Application::get_layer<kryos::ReflectionRegistry>();
 
@@ -264,25 +265,34 @@ void PropertiesEditorWorkspace::_imgui_draw(StructDrawData& data)
         return;
     }
 
-    const kryos::TypeInfo& info = data.reflection->get_type_info(data.it->type);
-    if (info.flags & kryos::TypeInfoFlags_StdVector)
-        _imgui_draw_vector(data, info);
-    if (info.flags & kryos::TypeInfoFlags_StdArray)
-    {
-    }
-    else if (m_draw_fnptrs.contains(data.it->type.get_id()))
+    const kryos::TypeInfo& stripped_info =
+        data.reflection->get_type_info(data.it->variable.get_type());
+
+    if (stripped_info.flags & kryos::TypeInfoFlags_StdVector)
+        _imgui_draw_std_vector(data, stripped_info);
+    if (stripped_info.flags & kryos::TypeInfoFlags_StdArray)
+        _imgui_draw_std_array(data);
+    else if (m_draw_fnptrs.contains(data.it->variable.get_type().get_id()))
     {
         ImGui::TableNextColumn();
         ImGui::Text("%s", data.it->fieldname.c_str());
         ImGui::TableNextColumn();
 
-        // Primitive type that can easly be printed
-        fnptr_imgui_draw_property fnptr = m_draw_fnptrs[data.it->type.get_id()];
-        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-        fnptr(data.it->fieldname, static_cast<void*>(data.object + data.it->offset), m_step_size);
-        ImGui::PopItemWidth();
+        fnptr_imgui_draw_property fnptr = m_draw_fnptrs[data.it->variable.get_type().get_id()];
+        if (data.it->variable.is_array())
+            _imgui_draw_array(data, stripped_info, fnptr);
+        else
+        {
+            // Primitive type that can easly be printed
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+            fnptr(
+                data.it->fieldname, static_cast<void*>(data.object + data.it->offset), m_step_size
+            );
+            ImGui::PopItemWidth();
 
-        ImGui::TableNextRow();
+            ImGui::TableNextRow();
+        }
+
         data.it++;
         _imgui_draw(data);
     }
@@ -290,7 +300,7 @@ void PropertiesEditorWorkspace::_imgui_draw(StructDrawData& data)
         _imgui_draw_non_primitive(data);
 }
 
-void PropertiesEditorWorkspace::_imgui_draw_vector(
+void PropertiesEditorWorkspace::_imgui_draw_std_vector(
     StructDrawData& data, const kryos::TypeInfo& vector_inner_type_info
 )
 {
@@ -356,6 +366,41 @@ void PropertiesEditorWorkspace::_imgui_draw_vector(
         );
 }
 
+void PropertiesEditorWorkspace::_imgui_draw_std_array(StructDrawData& data)
+{
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", data.it->fieldname.c_str());
+    ImGui::TableNextColumn();
+    ImGui::Text("std::array coming soon...");
+    ImGui::TableNextRow();
+}
+
+void PropertiesEditorWorkspace::_imgui_draw_array(
+    StructDrawData& data, const kryos::TypeInfo& info, fnptr_imgui_draw_property fnptr
+)
+{
+    ImGui::TableNextRow();
+
+    std::byte* array_begin = data.object + data.it->offset;
+    for (std::size_t i = 0; i < data.it->variable.get_array_size(); i++)
+    {
+        ImGui::TableNextColumn();
+
+        std::string number_str = "(" + std::to_string(i) + ")";
+        float number_str_size = ImGui::CalcTextSize(number_str.c_str()).x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth() - number_str_size);
+        ImGui::Text("%s", number_str.c_str());
+
+        ImGui::TableNextColumn();
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+        std::byte* element = array_begin + (i * info.size);
+        fnptr(data.it->fieldname + std::to_string(i), element, m_step_size);
+        ImGui::PopItemWidth();
+
+        ImGui::TableNextRow();
+    }
+}
+
 void PropertiesEditorWorkspace::_imgui_draw_non_primitive(StructDrawData& data)
 {
     if (data.reflection->type_contains_members(data.it->variable.get_type().get_id()))
@@ -385,7 +430,8 @@ void PropertiesEditorWorkspace::_imgui_draw_non_primitive(StructDrawData& data)
         }
         else
         {
-            const std::set<kryos::MemberInfo>& members = data.reflection->get_members(data.it->type);
+            const std::set<kryos::MemberInfo>& members =
+                data.reflection->get_members(data.it->type);
 
             StructDrawData new_object = {};
             new_object.object = data.object + data.it->offset;

@@ -29,7 +29,9 @@ class PropertiesEditorWorkspace : public PanelEditorWorkspaceBase
         std::initializer_list<std::pair<std::uint64_t, fnptr_imgui_draw_property>> list
     );
     void _imgui_draw(StructDrawData& data);
-    void _imgui_draw_vector(StructDrawData& data, const kryos::TypeInfo& vector_inner_type_info);
+    void _imgui_draw_std_vector(StructDrawData& data, const kryos::TypeInfo& vector_inner_type_info);
+    void _imgui_draw_array(StructDrawData& data, const kryos::TypeInfo& type, fnptr_imgui_draw_property);
+    void _imgui_draw_std_array(StructDrawData& data);
     void _imgui_draw_non_primitive(StructDrawData& data);
 
     HierarchyEditorWorkspace* m_hierarchy = nullptr;
