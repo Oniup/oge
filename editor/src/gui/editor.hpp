@@ -1,7 +1,7 @@
-#ifndef __KRYOS_ENGINE_CORE_EDITOR_HPP__
-#define __KRYOS_ENGINE_CORE_EDITOR_HPP__
+#ifndef __KRYOS_EDITOR_GUI_EDITOR_HPP__
+#define __KRYOS_EDITOR_GUI_EDITOR_HPP__
 
-#include <kryos/kryos.hpp>
+#include <kryos/core/application_layer.hpp>
 #include <yaml/yaml.hpp>
 
 #define HIERARCHY_FILTER_NAME "@kryos_editor"
@@ -11,11 +11,13 @@
 struct ImGuiIO;
 struct ImFont;
 
-class PanelEditorWorkspaceBase
+namespace workspace {
+
+class KIWorkspace
 {
   public:
-    PanelEditorWorkspaceBase(const std::string& name);
-    virtual ~PanelEditorWorkspaceBase() = default;
+    KIWorkspace(const std::string& name);
+    virtual ~KIWorkspace() = default;
 
     inline const std::string& get_name() const { return m_name; }
     inline bool get_enabled() const { return m_enabled; }
@@ -38,11 +40,13 @@ class PanelEditorWorkspaceBase
     bool m_remove_when_disabled = false;
 };
 
-class EditorWorkspace : public kryos::ApplicationLayer
+} // namespace workspace
+
+class KLEditorWorkspace final : public KIApplicationLayer
 {
   public:
-    EditorWorkspace();
-    virtual ~EditorWorkspace();
+    KLEditorWorkspace();
+    virtual ~KLEditorWorkspace();
 
     template<typename _Panel, typename... _Args>
     _Panel* push_panel(_Args&&... args)
@@ -51,11 +55,11 @@ class EditorWorkspace : public kryos::ApplicationLayer
         return static_cast<_Panel*>(m_panels.back());
     }
 
-    PanelEditorWorkspaceBase* get_panel(const std::string& name);
-    const std::vector<PanelEditorWorkspaceBase*>& get_all_panels() { return m_panels; }
+    workspace::KIWorkspace* get_panel(const std::string& name);
+    const std::vector<workspace::KIWorkspace*>& get_all_panels() { return m_panels; }
     void remove_panel(const std::string& name);
 
-    void push_panels(std::initializer_list<PanelEditorWorkspaceBase*> panels);
+    void push_panels(std::initializer_list<workspace::KIWorkspace*> panels);
 
     virtual void on_update() override;
 
@@ -64,96 +68,7 @@ class EditorWorkspace : public kryos::ApplicationLayer
     void _load_styles(yaml::Node& styles);
 
   private:
-    std::vector<PanelEditorWorkspaceBase*> m_panels{};
-};
-
-/******************************************************************************/
-/******************************** Base Windows ********************************/
-/******************************************************************************/
-
-class DockingEditorWorkspace : public PanelEditorWorkspaceBase
-{
-  public:
-    DockingEditorWorkspace(EditorWorkspace* workspace);
-    virtual ~DockingEditorWorkspace() override = default;
-
-    virtual void on_imgui_update() override;
-
-  private:
-    void _menu_open_window(const std::string& panel_name);
-
-    class EditorWorkspace* m_workspace = nullptr;
-    int m_dock_node_flags = 0;
-    int m_window_flags = 0;
-};
-
-class HierarchyEditorWorkspace : public PanelEditorWorkspaceBase
-{
-  public:
-    HierarchyEditorWorkspace();
-    virtual ~HierarchyEditorWorkspace() override = default;
-
-    inline ecs::Entity get_selected_entity() const { return m_selected_entity; }
-
-    virtual void on_imgui_update() override;
-
-  private:
-    void _draw_entity(kryos::Entity entity, ecs::Entity& entity_clicked, bool& opened_popup);
-    void _create_shape(
-        const std::string& new_entity_name, const std::string& mesh_file_path, kryos::Entity* parent
-    );
-    void _popup_menu(kryos::Entity* entity = nullptr);
-
-    ecs::Entity m_selected_entity = ECS_ENTITY_DESTROYED;
-    std::vector<kryos::Entity> m_deleted_entity = {};
-};
-
-class ConsoleEditorWorkspace : public PanelEditorWorkspaceBase
-{
-  public:
-    ConsoleEditorWorkspace(kryos::Debug* debug);
-    virtual ~ConsoleEditorWorkspace() override = default;
-
-    virtual void on_imgui_update() override;
-
-  private:
-    glm::vec4 m_debug_colors[2] = {
-        glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)};
-    std::tuple<bool, std::string> m_filters[kryos::debug_type_count] = {};
-    bool m_auto_scrolling = true;
-    kryos::Debug* m_debug = nullptr;
-    ImFont* m_font = nullptr;
-};
-
-class AssetsEditorWorkspace : public PanelEditorWorkspaceBase
-{
-  public:
-    AssetsEditorWorkspace();
-    virtual ~AssetsEditorWorkspace() override = default;
-
-    virtual void on_imgui_update() override;
-};
-
-class ViewportEditorWorkspace : public PanelEditorWorkspaceBase
-{
-  public:
-    ViewportEditorWorkspace(kryos::Framebuffer* framebuffer);
-    virtual ~ViewportEditorWorkspace() override = default;
-
-    virtual void on_imgui_update() override;
-
-  private:
-    void _camera_controller(kryos::CameraComponent* camera);
-    void _no_scene(kryos::CameraComponent* camera, float window_width, float window_height);
-    void _no_project();
-
-    glm::ivec2 m_last_required_framebuffer_size = {};
-    kryos::Framebuffer* m_framebuffer = nullptr;
-
-    float m_camera_move_speed = 5.0f;
-    glm::vec2 m_camera_sensitivity = {0.05f, 0.05f};
-    float m_yaw = 0.0f;
-    float m_pitch = 0.0f;
+    std::vector<workspace::KIWorkspace*> m_panels{};
 };
 
 #endif

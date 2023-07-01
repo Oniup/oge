@@ -1,17 +1,18 @@
 #ifndef __KRYOS_ENGINE_CORE_PROJECT_HPP__
 #define __KRYOS_ENGINE_CORE_PROJECT_HPP__
 
-#include <kryos/kryos.hpp>
+#include <kryos/core/application_layer.hpp>
+#include <kryos/scene/scene_manager.hpp>
 
-class Project : public kryos::ApplicationLayer
+class KLProject : public KIApplicationLayer
 {
   public:
-    inline static Project* get() { return m_Instance; }
+    inline static KLProject* get() { return m_Instance; }
     static void create_new_popup();
 
   public:
-    Project();
-    virtual ~Project() override = default;
+    KLProject();
+    virtual ~KLProject() override = default;
 
     inline bool unsaved() const { return m_unsaved; }
     inline bool& unsaved() { return m_unsaved; }
@@ -25,10 +26,10 @@ class Project : public kryos::ApplicationLayer
     bool create(const std::string& name, const std::string& project_root_path, bool is_3d_based);
     bool load(const std::string& project_filename);
     void serialize(const std::string& filename, bool use_scene_name);
-    void deserialize(kryos::Scene* scene, const std::string& filename);
+    void deserialize(KScene* scene, const std::string& filename);
 
   private:
-    static Project* m_Instance;
+    static KLProject* m_Instance;
 
   private:
     std::string m_name = {};

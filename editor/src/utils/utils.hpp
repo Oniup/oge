@@ -1,9 +1,10 @@
-#ifndef __OGE_UTILS_UTILS_HPP__
-#define __OGE_UTILS_UTILS_HPP__
+#ifndef __KRYOS_EDITOR_UTILS_UTILS_HPP__
+#define __KRYOS_EDITOR_UTILS_UTILS_HPP__
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
-#include <kryos/kryos.hpp>
+
+#include <string>
 
 struct ImGuiHelper
 {

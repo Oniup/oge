@@ -1,12 +1,17 @@
+#include "gui/docking.hpp"
 #include "core/project.hpp"
-#include "gui/editor.hpp"
 #include "gui/preferences.hpp"
+
+#include <kryos/core/application.hpp>
+#include <kryos/utils/utils.hpp>
+#include <kryos/scene/scene_manager.hpp>
 
 #include <imgui/imgui.h>
 #include <portable-file-dialogs/portable-file-dialogs.h>
 
-DockingEditorWorkspace::DockingEditorWorkspace(EditorWorkspace* workspace)
-    : PanelEditorWorkspaceBase("Docking")
+namespace workspace {
+
+KDocking::KDocking(KLEditorWorkspace* workspace) : KIWorkspace("Docking")
 {
     m_dock_node_flags = ImGuiDockNodeFlags_None;
 
@@ -19,7 +24,7 @@ DockingEditorWorkspace::DockingEditorWorkspace(EditorWorkspace* workspace)
     get_enabled() = true;
 }
 
-void DockingEditorWorkspace::on_imgui_update()
+void KDocking::on_imgui_update()
 {
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -34,8 +39,7 @@ void DockingEditorWorkspace::on_imgui_update()
 
     ImGuiID dock_space_id = ImGui::GetID("DockSpace");
     ImGui::DockSpace(dock_space_id, ImVec2(0.0f, 0.0f), m_dock_node_flags);
-    bool scene_loaded =
-        kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene() != nullptr;
+    bool scene_loaded = KIApplication::get_layer<KLSceneManager>()->get_active_scene() != nullptr;
 
     bool open_project_popup = false;
 
@@ -64,7 +68,7 @@ void DockingEditorWorkspace::on_imgui_update()
                     )
                         .result();
                 if (files.size() > 0)
-                    Project::get()->load(files[0]);
+                    KLProject::get()->load(files[0]);
             }
 
             if (ImGui::BeginMenu("Open Recents"))
@@ -91,7 +95,7 @@ void DockingEditorWorkspace::on_imgui_update()
                         if (ImGui::MenuItem(project_config["ProjectName"].as<std::string>().c_str()
                             ))
                         {
-                            if (!Project::get()->load(recently_opened[i]))
+                            if (!KLProject::get()->load(recently_opened[i]))
                             {
                                 recently_opened.erase(recently_opened.begin() + i);
                                 project_node["RecentlyOpened"] = recently_opened;
@@ -105,13 +109,13 @@ void DockingEditorWorkspace::on_imgui_update()
             }
 
             if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, scene_loaded))
-                kryos::Debug::log("Not Implemented yet", kryos::DebugType_Warning);
+                KLDebug::log("Not Implemented yet", DebugType_Warning);
 
             if (ImGui::MenuItem("Save As", "Ctrl+Shift+S", nullptr, scene_loaded))
             {
-                if (kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene() != nullptr)
+                if (KIApplication::get_layer<KLSceneManager>()->get_active_scene() != nullptr)
                 {
-                    Project* project = kryos::Application::get_layer<Project>();
+                    KLProject* project = KIApplication::get_layer<KLProject>();
                     std::string filename = pfd::save_file(
                                                "Create Scene", project->get_root_path(),
                                                {"Oniup Scene Files", "*.oscene"}
@@ -129,10 +133,9 @@ void DockingEditorWorkspace::on_imgui_update()
         {
             if (ImGui::BeginMenu("Workspace"))
             {
-                const std::vector<PanelEditorWorkspaceBase*>& panels =
-                    m_workspace->get_all_panels();
+                const std::vector<KIWorkspace*>& panels = m_workspace->get_all_panels();
 
-                for (PanelEditorWorkspaceBase* panel : panels)
+                for (KIWorkspace* panel : panels)
                 {
                     if (panel->get_name() != get_name())
                         ImGui::MenuItem(panel->get_name().c_str(), nullptr, &panel->get_enabled());
@@ -144,9 +147,7 @@ void DockingEditorWorkspace::on_imgui_update()
             if (ImGui::MenuItem("Preferences"))
             {
                 if (m_workspace->get_panel("Preferences") == nullptr)
-                    kryos::Debug::log(
-                        "Preference settings are coming soon ...", kryos::DebugType_Warning
-                    );
+                    KLDebug::log("Preference settings are coming soon ...", DebugType_Warning);
             }
 
             ImGui::EndMenu();
@@ -156,9 +157,11 @@ void DockingEditorWorkspace::on_imgui_update()
 
     if (open_project_popup)
         ImGui::OpenPopup("Create Project");
-    Project::create_new_popup();
+    KLProject::create_new_popup();
 
     ImGui::End();
 }
 
-void DockingEditorWorkspace::_menu_open_window(const std::string& panel_name) {}
+void KDocking::_menu_open_window(const std::string& panel_name) {}
+
+} // namespace workspace

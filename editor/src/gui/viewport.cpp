@@ -1,39 +1,43 @@
+#include "gui/viewport.hpp"
 #include "core/project.hpp"
 #include "gui/editor.hpp"
 #include "gui/preferences.hpp"
 #include "utils/utils.hpp"
 
+#include <kryos/core/input.hpp>
+
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
 #include <portable-file-dialogs/portable-file-dialogs.h>
 
-ViewportEditorWorkspace::ViewportEditorWorkspace(kryos::Framebuffer* framebuffer)
-    : PanelEditorWorkspaceBase("Viewport")
+namespace workspace {
+
+KViewport::KViewport(KFramebuffer* framebuffer) : KIWorkspace("Viewport")
 {
     if (framebuffer != nullptr)
         m_framebuffer = framebuffer;
     else
-        kryos::Debug::log("Viewport::Viewport(kryos::Framebuffer*) -> failed to create "
-                        "viewport as framebuffer is nullptr");
+        KLDebug::log("Viewport::Viewport(Framebuffer*) -> failed to create "
+                     "viewport as framebuffer is nullptr");
 }
 
-void ViewportEditorWorkspace::on_imgui_update()
+void KViewport::on_imgui_update()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     int window_flags = ImGuiWindowFlags_NoScrollbar;
-    if (Project::get()->unsaved())
+    if (KLProject::get()->unsaved())
         window_flags |= ImGuiWindowFlags_UnsavedDocument;
 
     ImGui::Begin(get_name().c_str(), &get_enabled(), window_flags);
     {
         ImGui::PopStyleVar();
 
-        kryos::Scene* scene = kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene();
-        kryos::CameraComponent* editor_camera = nullptr;
+        KScene* scene = KIApplication::get_layer<KLSceneManager>()->get_active_scene();
+        KCCamera* editor_camera = nullptr;
 
         if (scene != nullptr)
         {
-            auto view = ecs::View<kryos::CameraComponent, kryos::TagComponent>(&scene->get_registry());
+            auto view = ecs::View<KCCamera, KCTag>(&scene->get_registry());
             for (ecs::Entity entity : view)
             {
                 if (view.has_required(entity))
@@ -51,7 +55,7 @@ void ViewportEditorWorkspace::on_imgui_update()
         {
             ImVec2 window_size = ImGui::GetWindowSize();
 
-            if (Project::get()->opened())
+            if (KLProject::get()->opened())
                 _no_scene(editor_camera, window_size.x, window_size.y);
             else
                 _no_project();
@@ -70,14 +74,14 @@ void ViewportEditorWorkspace::on_imgui_update()
                         window_size.y != m_framebuffer->size.y)
                     {
                         m_framebuffer =
-                            kryos::Application::get_layer<kryos::Pipeline>()->recreate_framebuffer(
+                            KIApplication::get_layer<KLPipeline>()->recreate_framebuffer(
                                 m_framebuffer, static_cast<int>(window_size.x),
                                 static_cast<int>(window_size.y)
                             );
                         if (m_framebuffer == nullptr)
                         {
-                            kryos::Debug::log("Viewport::on_imgui_update() -> failed to resize "
-                                            "framebuffer size");
+                            KLDebug::log("Viewport::on_imgui_update() -> failed to resize "
+                                         "framebuffer size");
                             return;
                         }
                     }
@@ -102,46 +106,44 @@ void ViewportEditorWorkspace::on_imgui_update()
     ImGui::End();
 }
 
-void ViewportEditorWorkspace::_camera_controller(kryos::CameraComponent* camera)
+void KViewport::_camera_controller(KCCamera* camera)
 {
-    glm::vec2 mouse_position = kryos::Input::get_mouse_position();
+    glm::vec2 mouse_position = KInput::get_mouse_position();
     static glm::vec2 last_mouse_position = mouse_position;
 
     if (camera != nullptr)
     {
-        if (kryos::Input::pressed_key(kryos::InputKeyCode_LeftShift))
+        if (KInput::pressed_key(InputKeyCode_LeftShift))
         {
-            if (kryos::Input::pressed_mousebutton(kryos::InputMouseButton_Right))
+            if (KInput::pressed_mousebutton(InputMouseButton_Right))
             {
                 constexpr float increase_speed = 0.3f;
-                m_camera_move_speed = m_camera_move_speed +
-                                      (increase_speed * kryos::Input::get_mouse_scroll_direction());
+                m_camera_move_speed =
+                    m_camera_move_speed + (increase_speed * KInput::get_mouse_scroll_direction());
                 if (m_camera_move_speed < 0.0f)
                     m_camera_move_speed = 0.0f;
 
-                if (kryos::Input::pressed_key(kryos::InputKeyCode_S))
-                    camera->position -=
-                        m_camera_move_speed * camera->forward * kryos::Time::get_delta();
+                if (KInput::pressed_key(InputKeyCode_S))
+                    camera->position -= m_camera_move_speed * camera->forward * KTime::get_delta();
 
-                if (kryos::Input::pressed_key(kryos::InputKeyCode_W))
-                    camera->position +=
-                        m_camera_move_speed * camera->forward * kryos::Time::get_delta();
+                if (KInput::pressed_key(InputKeyCode_W))
+                    camera->position += m_camera_move_speed * camera->forward * KTime::get_delta();
 
-                if (kryos::Input::pressed_key(kryos::InputKeyCode_D))
+                if (KInput::pressed_key(InputKeyCode_D))
                     camera->position -= m_camera_move_speed *
                                         glm::cross(camera->forward, camera->up) *
-                                        kryos::Time::get_delta();
+                                        KTime::get_delta();
 
-                if (kryos::Input::pressed_key(kryos::InputKeyCode_A))
+                if (KInput::pressed_key(InputKeyCode_A))
                     camera->position += m_camera_move_speed *
                                         glm::cross(camera->forward, camera->up) *
-                                        kryos::Time::get_delta();
+                                        KTime::get_delta();
 
-                if (kryos::Input::pressed_key(kryos::InputKeyCode_Q))
-                    camera->position.y -= m_camera_move_speed * kryos::Time::get_delta();
+                if (KInput::pressed_key(InputKeyCode_Q))
+                    camera->position.y -= m_camera_move_speed * KTime::get_delta();
 
-                if (kryos::Input::pressed_key(kryos::InputKeyCode_E))
-                    camera->position.y += m_camera_move_speed * kryos::Time::get_delta();
+                if (KInput::pressed_key(InputKeyCode_E))
+                    camera->position.y += m_camera_move_speed * KTime::get_delta();
                 glm::vec2 mouse_movement = last_mouse_position - mouse_position;
 
                 mouse_movement *= 0.05f;
@@ -162,9 +164,7 @@ void ViewportEditorWorkspace::_camera_controller(kryos::CameraComponent* camera)
     last_mouse_position = mouse_position;
 }
 
-void ViewportEditorWorkspace::_no_scene(
-    kryos::CameraComponent* editor_camera, float window_width, float window_height
-)
+void KViewport::_no_scene(KCCamera* editor_camera, float window_width, float window_height)
 {
     ImVec2 text_size = ImGui::CalcTextSize("Create Empty Scene");
     ImGui::SetCursorPosX((window_width - text_size.x) * 0.5f);
@@ -172,24 +172,24 @@ void ViewportEditorWorkspace::_no_scene(
 
     if (ImGui::Button("Create Empty Scene"))
     {
-        kryos::Application::get_layer<kryos::SceneManager>()->set_active(
-            kryos::Application::get_layer<kryos::SceneManager>()->push("Empty Scene")
+        KIApplication::get_layer<KLSceneManager>()->set_active(
+            KIApplication::get_layer<KLSceneManager>()->push("Empty Scene")
         );
 
         // Create Editor Camera for new scene
-        kryos::Entity entity = kryos::Entity(true);
-        entity.add_component<kryos::TagComponent>(HIERARCHY_FILTER_NAME);
+        KEntity entity = KEntity(true);
+        entity.add_component<KCTag>(HIERARCHY_FILTER_NAME);
 
-        editor_camera = entity.add_component<kryos::CameraComponent>();
+        editor_camera = entity.add_component<KCCamera>();
         editor_camera->clear_color = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
         editor_camera->is_main = true;
         // TODO: Set to Orthographic if in 2D mode
-        editor_camera->projection_type = kryos::CameraProjection_Perspective;
-        Project::get()->unsaved() = true;
+        editor_camera->projection_type = CameraProjection_Perspective;
+        KLProject::get()->unsaved() = true;
     }
 }
 
-void ViewportEditorWorkspace::_no_project()
+void KViewport::_no_project()
 {
     ImVec2 available_space = ImGui::GetContentRegionAvail();
     ImVec2 child_window_size = ImVec2(available_space.x * 0.5f, available_space.y * 0.5f);
@@ -209,7 +209,7 @@ void ViewportEditorWorkspace::_no_project()
             if (ImGui::Button("Create New Project", ImVec2(button_width, 0.0f)))
                 ImGui::OpenPopup("Create Project");
 
-            Project::create_new_popup();
+            KLProject::create_new_popup();
 
             if (ImGui::Button("Open Project", ImVec2(button_width, 0.0f)))
             {
@@ -221,7 +221,7 @@ void ViewportEditorWorkspace::_no_project()
                         .result();
                 if (files.size() > 0)
                 {
-                    if (Project::get()->load(files[0]))
+                    if (KLProject::get()->load(files[0]))
                     {
                         // Update preferences config
                         yaml::Node project_config = yaml::open(files[0]);
@@ -294,7 +294,7 @@ void ViewportEditorWorkspace::_no_project()
                             )
                         ))
                     {
-                        if (!Project::get()->load(recently_opened[i]))
+                        if (!KLProject::get()->load(recently_opened[i]))
                             recently_opened.erase(recently_opened.begin() + i);
                     }
                     ImGui::SameLine();
@@ -320,3 +320,5 @@ void ViewportEditorWorkspace::_no_project()
     }
     ImGui::EndChild();
 }
+
+} // namespace workspace

@@ -2,9 +2,13 @@
 #include "utils/utils.hpp"
 #include "utils/yaml_types.hpp"
 
-#include <filesystem>
+#include <kryos/core/application.hpp>
+#include <kryos/core/debug.hpp>
+#include <kryos/renderer/window.hpp>
+#include <kryos/utils/utils.hpp>
 
 #include <GLFW/glfw3.h>
+#include <filesystem>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/imgui.h>
@@ -17,13 +21,13 @@ enum ConsoleFileReadingStage
     ConsoleFileReadingStage_Message
 };
 
-PanelEditorWorkspaceBase::PanelEditorWorkspaceBase(const std::string& name) : m_name(name)
+workspace::KIWorkspace::KIWorkspace(const std::string& name) : m_name(name)
 {
     m_io = &ImGui::GetIO();
     static_cast<void>(*m_io);
 }
 
-EditorWorkspace::EditorWorkspace()
+KLEditorWorkspace::KLEditorWorkspace()
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -40,9 +44,7 @@ EditorWorkspace::EditorWorkspace()
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-    ImGui_ImplGlfw_InitForOpenGL(
-        kryos::Application::get_layer<kryos::Window>()->get_internal(), true
-    );
+    ImGui_ImplGlfw_InitForOpenGL(KIApplication::get_layer<KLWindow>()->get_internal(), true);
     ImGui_ImplOpenGL3_Init("#version 450");
 
     // Settings Preferences
@@ -89,7 +91,7 @@ EditorWorkspace::EditorWorkspace()
         if (!std::filesystem::copy_file(
                 config_path + "/layouts/" + default_layout + ".ini", "imgui.ini"
             ))
-            kryos::Debug::log("Failed to load editor layout", kryos::DebugType_Error);
+            KLDebug::log("Failed to load editor layout", DebugType_Error);
     }
 
     io.FontDefault =
@@ -99,9 +101,9 @@ EditorWorkspace::EditorWorkspace()
     _load_styles(ui["Style"]);
 }
 
-EditorWorkspace::~EditorWorkspace()
+KLEditorWorkspace::~KLEditorWorkspace()
 {
-    for (PanelEditorWorkspaceBase* panel : m_panels)
+    for (workspace::KIWorkspace* panel : m_panels)
     {
         delete panel;
     }
@@ -111,9 +113,9 @@ EditorWorkspace::~EditorWorkspace()
     ImGui::DestroyContext();
 }
 
-PanelEditorWorkspaceBase* EditorWorkspace::get_panel(const std::string& name)
+workspace::KIWorkspace* KLEditorWorkspace::get_panel(const std::string& name)
 {
-    for (PanelEditorWorkspaceBase* panel : m_panels)
+    for (workspace::KIWorkspace* panel : m_panels)
     {
         if (panel->get_name() == name)
         {
@@ -124,7 +126,7 @@ PanelEditorWorkspaceBase* EditorWorkspace::get_panel(const std::string& name)
     return nullptr;
 }
 
-void EditorWorkspace::remove_panel(const std::string& name)
+void KLEditorWorkspace::remove_panel(const std::string& name)
 {
     for (std::size_t i = 0; i < m_panels.size(); i++)
     {
@@ -137,19 +139,19 @@ void EditorWorkspace::remove_panel(const std::string& name)
     }
 }
 
-void EditorWorkspace::push_panels(std::initializer_list<PanelEditorWorkspaceBase*> panels)
+void KLEditorWorkspace::push_panels(std::initializer_list<workspace::KIWorkspace*> panels)
 {
-    for (PanelEditorWorkspaceBase* panel : panels)
+    for (workspace::KIWorkspace* panel : panels)
         m_panels.push_back(panel);
 }
 
-void EditorWorkspace::on_update()
+void KLEditorWorkspace::on_update()
 {
     ImGui_ImplGlfw_NewFrame();
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
 
-    for (PanelEditorWorkspaceBase* panel : m_panels)
+    for (workspace::KIWorkspace* panel : m_panels)
     {
         if (!panel->get_enabled())
         {
@@ -174,7 +176,7 @@ void EditorWorkspace::on_update()
     }
 }
 
-void EditorWorkspace::_load_colors(yaml::Node& colors)
+void KLEditorWorkspace::_load_colors(yaml::Node& colors)
 {
     auto& coloring = ImGui::GetStyle().Colors;
 
@@ -186,7 +188,7 @@ void EditorWorkspace::_load_colors(yaml::Node& colors)
     }
 }
 
-void EditorWorkspace::_load_styles(yaml::Node& styles)
+void KLEditorWorkspace::_load_styles(yaml::Node& styles)
 {
     auto& styling = ImGui::GetStyle();
 
@@ -216,120 +218,4 @@ void EditorWorkspace::_load_styles(yaml::Node& styles)
         styling.WindowMenuButtonPosition = ImGuiDir_Right;
         break;
     }
-}
-
-/******************************************************************************/
-/******************************** Base Windows ********************************/
-/******************************************************************************/
-
-ConsoleEditorWorkspace::ConsoleEditorWorkspace(kryos::Debug* debug)
-    : PanelEditorWorkspaceBase("Console")
-{
-    std::string names[] = {"Messages", "Warnings", "Errors", "Fatal Errors", "Inits", "Terminate"};
-    for (std::size_t i = 0; i < kryos::debug_type_count; i++)
-    {
-        std::get<bool>(m_filters[i]) = true;
-        std::get<std::string>(m_filters[i]) = std::move(names[i]);
-    }
-
-    ImGuiIO& io = ImGui::GetIO();
-    (void)io;
-
-#if defined(_MSC_VER)
-    // TODO: ...
-#else
-    std::string preferences_path = pfd::path::home() + "/.config/kryos/preferences.yaml";
-#endif
-
-    yaml::Node preferences = yaml::open(preferences_path);
-    m_font = io.Fonts->AddFontFromFileTTF(
-        preferences["EditorUI"].get_child("FontMono").as<std::string>().c_str(), 18.0f
-    );
-
-    m_debug = debug;
-}
-
-void ConsoleEditorWorkspace::on_imgui_update()
-{
-    ImGui::Begin(get_name().c_str(), &get_enabled(), ImGuiWindowFlags_MenuBar);
-
-    if (ImGui::BeginMenuBar())
-    {
-        if (ImGui::BeginMenu("Options"))
-        {
-            if (ImGui::BeginMenu("Filter"))
-            {
-                for (std::tuple<bool, std::string>& filter : m_filters)
-                    ImGui::MenuItem(
-                        std::get<std::string>(filter).c_str(), nullptr, &std::get<bool>(filter)
-                    );
-                ImGui::EndMenu();
-            }
-            ImGui::MenuItem("Auto-Scrolling", nullptr, &m_auto_scrolling);
-            if (ImGui::MenuItem("Log Tests"))
-            {
-                kryos::Debug::log("Test Message");
-                kryos::Debug::log("Test Warning Message", kryos::DebugType_Warning);
-                kryos::Debug::log("Test Error Message", kryos::DebugType_Error);
-            }
-            ImGui::EndMenu();
-        }
-        if (ImGui::MenuItem("Clear"))
-            m_debug->clear_logs();
-        ImGui::EndMenuBar();
-    }
-
-    ImGui::PushFont(m_font);
-
-    for (const std::tuple<kryos::DebugType, std::string, float>& log : m_debug->get_logs())
-    {
-        if (std::get<bool>(m_filters[static_cast<std::size_t>(std::get<kryos::DebugType>(log))]))
-        {
-            std::string prefix{};
-            switch (std::get<kryos::DebugType>(log))
-            {
-            case kryos::DebugType_Warning:
-                prefix = "[Warning (" + std::to_string(std::get<float>(log)) + ")]: ";
-                ImGui::PushStyleColor(
-                    ImGuiCol_Text, ImVec4(
-                                       m_debug_colors[0].r, m_debug_colors[0].g,
-                                       m_debug_colors[0].b, m_debug_colors[0].a
-                                   )
-                );
-                break;
-                prefix = "[Warning (" + std::to_string(std::get<float>(log)) + ")]: ";
-            case kryos::DebugType_Error:
-                prefix = "[Error (" + std::to_string(std::get<float>(log)) + ")]: ";
-                ImGui::PushStyleColor(
-                    ImGuiCol_Text, ImVec4(
-                                       m_debug_colors[1].r, m_debug_colors[1].g,
-                                       m_debug_colors[1].b, m_debug_colors[1].a
-                                   )
-                );
-                break;
-            case kryos::DebugType_Message:
-                prefix = "[Message (" + std::to_string(std::get<float>(log)) + ")]: ";
-                break;
-            }
-
-            ImGui::TextWrapped("%s", std::string(prefix + std::get<std::string>(log)).c_str());
-            if (std::get<kryos::DebugType>(log) != kryos::DebugType_Message)
-                ImGui::PopStyleColor();
-        }
-    }
-
-    if (m_auto_scrolling && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
-        ImGui::SetScrollHereY(1.0f);
-
-    ImGui::PopFont();
-
-    ImGui::End();
-}
-
-AssetsEditorWorkspace::AssetsEditorWorkspace() : PanelEditorWorkspaceBase("Assets") {}
-
-void AssetsEditorWorkspace::on_imgui_update()
-{
-    ImGui::Begin(get_name().c_str(), &get_enabled());
-    ImGui::End();
 }

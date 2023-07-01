@@ -1,13 +1,14 @@
-#ifndef __KRYOS_ENGINE_CORE_APP_HPP__
-#define __KRYOS_ENGINE_CORE_APP_HPP__
+#ifndef __KRYOS_ENGINE_GUI_APP_HPP__
+#define __KRYOS_ENGINE_GUI_APP_HPP__
 
-#include <kryos/kryos.hpp>
+#include <kryos/utils/utils.hpp>
+#include <kryos/core/application.hpp>
 
-class App : public kryos::Application
+class KEditorApp : public KIApplication
 {
   public:
-    App();
-    virtual ~App() override = default;
+    KEditorApp();
+    virtual ~KEditorApp() override = default;
 };
 
 #endif

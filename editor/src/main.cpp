@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-    App* app = new App();
+    KEditorApp* app = new KEditorApp();
     app->run();
     delete app;
 }

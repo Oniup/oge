@@ -2,9 +2,10 @@
 #define __KRYOS_ENGINE_GUI_PREFERENCES_HPP__
 
 #include "utils/utils.hpp"
-#include <kryos/kryos.hpp>
 #include <portable-file-dialogs/portable-file-dialogs.h>
 #include <yaml/yaml.hpp>
+
+#include <string>
 
 // TODO: Implement Preferences Editor window
 class Preferences

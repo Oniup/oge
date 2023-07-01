@@ -2,18 +2,22 @@
 #include "gui/preferences.hpp"
 #include "utils/utils.hpp"
 
+#include <kryos/core/application.hpp>
+#include <kryos/utils/utils.hpp>
+#include <kryos/renderer/window.hpp>
+
 #include <filesystem>
 #include <imgui/imgui.h>
 #include <portable-file-dialogs/portable-file-dialogs.h>
 #include <yaml/yaml.hpp>
 
-Project* Project::m_Instance = nullptr;
+KLProject* KLProject::m_Instance = nullptr;
 
-void Project::create_new_popup()
+void KLProject::create_new_popup()
 {
     if (ImGui::BeginPopupModal("Create Project", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        kryos::Window* window = kryos::Application::get_layer<kryos::Window>();
+        KLWindow* window = KIApplication::get_layer<KLWindow>();
         ImVec2 window_size = ImVec2(
             static_cast<float>(window->get_width()) * 0.2f,
             static_cast<float>(window->get_height()) * 0.2f
@@ -88,7 +92,7 @@ void Project::create_new_popup()
                         std::string(FolderLocation).size() > 0)
                     {
 
-                        if (Project::get()->create(ProjectName, FolderLocation, Is3DBased))
+                        if (KLProject::get()->create(ProjectName, FolderLocation, Is3DBased))
                             ImGui::CloseCurrentPopup();
                         else
                         {
@@ -123,7 +127,7 @@ void Project::create_new_popup()
     }
 }
 
-Project::Project()
+KLProject::KLProject()
 {
     assert(
         m_Instance == nullptr && "Project::Project() -> cannot created multiple project "
@@ -133,7 +137,7 @@ Project::Project()
     m_Instance = this;
 }
 
-bool Project::create(
+bool KLProject::create(
     const std::string& name, const std::string& project_root_path, bool is_3d_based
 )
 {
@@ -160,7 +164,7 @@ bool Project::create(
 
         if (yaml::write(root, m_project_filename))
         {
-            kryos::Application::get_layer<kryos::Window>()->set_title("Kryos - " + m_name);
+            KIApplication::get_layer<KLWindow>()->set_title("Kryos - " + m_name);
 
             yaml::Node preferences = Preferences::get_preferences();
             yaml::Node& project_node = preferences["Project"];
@@ -173,16 +177,16 @@ bool Project::create(
             return true;
         }
         else
-            kryos::Debug::log(
+            KLDebug::log(
                 "Failed to create project: cannot write project yaml file to '" +
                     m_project_filename = "'",
-                kryos::DebugType_Error
+                DebugType_Error
             );
     }
     else
-        kryos::Debug::log(
+        KLDebug::log(
             "Failed to create project: cannot create directory '" + m_root_path + "'",
-            kryos::DebugType_Error
+            DebugType_Error
         );
 
     m_name.clear();
@@ -192,7 +196,7 @@ bool Project::create(
     return false;
 }
 
-bool Project::load(const std::string& project_filename)
+bool KLProject::load(const std::string& project_filename)
 {
     yaml::Node root = yaml::open(project_filename);
     if (!root.empty())
@@ -202,7 +206,7 @@ bool Project::load(const std::string& project_filename)
         m_root_path = std::string(project_filename.c_str(), project_filename.find_last_of('/'));
         m_unsaved = false;
 
-        kryos::Application::get_layer<kryos::Window>()->set_title("Kryos - " + m_name);
+        KIApplication::get_layer<KLWindow>()->set_title("Kryos - " + m_name);
 
         if (root["SceneCount"].as<std::size_t>() > 0)
             // TODO: load scenes
@@ -212,40 +216,6 @@ bool Project::load(const std::string& project_filename)
     return false;
 }
 
-void Project::serialize(const std::string& filename, bool use_scene_name)
-{
-    yaml::Node project_node = yaml::open(m_project_filename);
-    if (!project_node.empty())
-    {
-        kryos::SerializableTypeHandler* handler =
-            kryos::Application::get_layer<kryos::SerializableTypeHandler>();
-        kryos::SceneManager* scene_manager = kryos::Application::get_layer<kryos::SceneManager>();
+void KLProject::serialize(const std::string& filename, bool use_scene_name) {}
 
-        kryos::Scene* scene = scene_manager->get_active_scene();
-        if (!use_scene_name)
-        {
-            std::size_t name_offset = filename.find_last_of('/') + 1;
-            std::size_t scene_name_size = filename.find_last_of('.') - name_offset;
-            std::string scene_name = std::string(filename.c_str() + name_offset, scene_name_size);
-            scene->set_name(scene_name);
-        }
-
-        handler->serialize_text(scene, filename);
-        m_unsaved = false;
-
-        // Updating project file so it knows about the knewly created scene
-        std::size_t scenes_count = project_node["SceneCount"].as<std::size_t>();
-
-        yaml::Node& scenes_node = project_node["Scenes"];
-        scenes_node << yaml::node(scene->get_name(), filename);
-        project_node["SceneCount"] = scenes_count + 1;
-
-        project_node.write_file(m_project_filename);
-    }
-    else
-        kryos::Debug::log(
-            "Cannot serialize scene, cannot open Project file", kryos::DebugType_Error
-        );
-}
-
-void Project::deserialize(kryos::Scene* scene, const std::string& filename) {}
+void KLProject::deserialize(KScene* scene, const std::string& filename) {}

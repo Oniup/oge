@@ -1,8 +1,7 @@
-#ifndef __OGE_UTILS_YAML_TYPES_HPP__
-#define __OGE_UTILS_YAML_TYPES_HPP__
+#ifndef __KRYOS_EDITOR_UTILS_YAML_TYPES_HPP__
+#define __KRYOS_EDITOR_UTILS_YAML_TYPES_HPP__
 
 #include <imgui/imgui.h>
-#include <kryos/kryos.hpp>
 #include <yaml/yaml.hpp>
 
 template<>

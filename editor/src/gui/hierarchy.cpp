@@ -1,14 +1,20 @@
-#include "gui/editor.hpp"
+#include "gui/hierarchy.hpp"
+
+#include <kryos/core/asset_handler.hpp>
+#include <kryos/scene/components.hpp>
+#include <kryos/scene/scene_manager.hpp>
 
 #include <imgui/imgui.h>
 
-HierarchyEditorWorkspace::HierarchyEditorWorkspace() : PanelEditorWorkspaceBase("Hierarchy") {}
+namespace workspace {
 
-void HierarchyEditorWorkspace::on_imgui_update()
+KHierarchy::KHierarchy() : KIWorkspace("Hierarchy") {}
+
+void KHierarchy::on_imgui_update()
 {
     ImGui::Begin(get_name().c_str(), &get_enabled());
 
-    kryos::Scene* active_scene = kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene();
+    KScene* active_scene = KIApplication::get_layer<KLSceneManager>()->get_active_scene();
     if (active_scene != nullptr)
     {
         ecs::Registry& registry = active_scene->get_registry();
@@ -18,10 +24,10 @@ void HierarchyEditorWorkspace::on_imgui_update()
         bool opened_targeted_entity_popup = false;
         for (std::size_t i = 0; i < entities.size(); i++)
         {
-            kryos::Entity entity = kryos::Entity(entities[i]);
+            KEntity entity = KEntity(entities[i]);
             if (entity)
             {
-                kryos::TagComponent* tag = entity.get_component<kryos::TagComponent>();
+                KCTag* tag = entity.get_component<KCTag>();
                 bool include_ent = true;
                 if (tag != nullptr)
                 {
@@ -57,16 +63,14 @@ void HierarchyEditorWorkspace::on_imgui_update()
     ImGui::End();
 }
 
-void HierarchyEditorWorkspace::_draw_entity(
-    kryos::Entity entity, ecs::Entity& entity_clicked, bool& opened_popup
-)
+void KHierarchy::_draw_entity(KEntity entity, ecs::Entity& entity_clicked, bool& opened_popup)
 {
     int flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
                 ImGuiTreeNodeFlags_SpanFullWidth;
     if (m_selected_entity == entity)
         flags |= ImGuiTreeNodeFlags_Selected;
 
-    kryos::NameComponent* name = entity.get_component<kryos::NameComponent>();
+    KCName* name = entity.get_component<KCName>();
     std::string str = "Entity";
     if (name != nullptr)
         str = name->name;
@@ -85,16 +89,16 @@ void HierarchyEditorWorkspace::_draw_entity(
         entity_clicked = id;
 }
 
-void HierarchyEditorWorkspace::_create_shape(
-    const std::string& new_entity_name, const std::string& mesh_file_path, kryos::Entity* parent
+void KHierarchy::_create_shape(
+    const std::string& new_entity_name, const std::string& mesh_file_path, KEntity* parent
 )
 {
-    kryos::Entity entity{};
-    kryos::NameComponent* name = entity.add_component<kryos::NameComponent>(new_entity_name);
+    KEntity entity{};
+    KCName* name = entity.add_component<KCName>(new_entity_name);
 
-    kryos::MeshRendererComponent* mesh_renderer = entity.add_component<kryos::MeshRendererComponent>();
-    mesh_renderer->model = kryos::Application::get_layer<kryos::AssetHandler>()->load_model_into_memory(
-        mesh_file_path, kryos::ModelFileType_Obj
+    KCMeshRenderer* mesh_renderer = entity.add_component<KCMeshRenderer>();
+    mesh_renderer->model = KIApplication::get_layer<KLAssetHandler>()->load_model_into_memory(
+        mesh_file_path, ModelFileType_Obj
     );
 
     if (parent != nullptr)
@@ -103,16 +107,16 @@ void HierarchyEditorWorkspace::_create_shape(
     }
 }
 
-void HierarchyEditorWorkspace::_popup_menu(kryos::Entity* entity)
+void KHierarchy::_popup_menu(KEntity* entity)
 {
-    kryos::Scene* scene = kryos::Application::get_layer<kryos::SceneManager>()->get_active_scene();
+    KScene* scene = KIApplication::get_layer<KLSceneManager>()->get_active_scene();
 
     if (scene != nullptr)
     {
         if (ImGui::BeginMenu("New"))
         {
             if (ImGui::MenuItem("Entity"))
-                kryos::Entity creating{};
+                KEntity creating{};
 
             if (ImGui::BeginMenu("Shape"))
             {
@@ -141,3 +145,5 @@ void HierarchyEditorWorkspace::_popup_menu(kryos::Entity* entity)
         }
     }
 }
+
+} // namespace workspace
