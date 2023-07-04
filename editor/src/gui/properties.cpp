@@ -224,7 +224,7 @@ void KProperties::on_imgui_update()
             {
                 for (const auto& [type, info] : reflection->get_all_type_infos())
                 {
-                    if (info.flags & TypeInfoFlags_Component)
+                    if (info.flags & KETypeInfoFlag_Component)
                     {
                         if (entity.get_component(type) != nullptr)
                             continue;
@@ -262,8 +262,8 @@ void KProperties::_imgui_draw(KSerializeData& data)
         return;
 
     if (data.iter->variable.get_pointer_count() > 2 ||
-        data.iter->variable.get_flags() & VariableFlags_Const ||
-        data.iter->flags & MemberInfoEditorFlag_Hide)
+        data.iter->variable.get_flags() & KEVariableFlag_Const ||
+        data.iter->flags & KEMemberInfoEditorFlag_Hide)
     {
         data.iter++;
         _imgui_draw(data);
@@ -272,9 +272,9 @@ void KProperties::_imgui_draw(KSerializeData& data)
 
     const KTypeInfo& stripped_info = data.reflection->get_type_info(data.iter->variable.get_type());
 
-    if (stripped_info.flags & TypeInfoFlags_StdVector)
+    if (stripped_info.flags & KETypeInfoFlag_StdVector)
         _imgui_draw_std_vector(data, stripped_info);
-    if (stripped_info.flags & TypeInfoFlags_StdArray)
+    if (stripped_info.flags & KETypeInfoFlag_StdArray)
         _imgui_draw_std_array(data);
     else if (m_draw_fnptrs.contains(data.iter->variable.get_type().get_id()))
     {
@@ -420,11 +420,11 @@ void KProperties::_imgui_draw_non_primitive(KSerializeData& data)
 
         if (data.iter->variable.is_pointer())
         {
-            if (flags & MemberInfoEditorFlag_NeverOwnsPtrData)
+            if (flags & KEMemberInfoEditorFlag_NeverOwnsPtrData)
             {
                 // TODO: ...
             }
-            else if (flags & MemberInfoEditorFlag_OwnsPtrData)
+            else if (flags & KEMemberInfoEditorFlag_OwnsPtrData)
             {
                 // TODO: ...
             }

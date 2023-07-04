@@ -91,7 +91,7 @@ KLEditorWorkspace::KLEditorWorkspace()
         if (!std::filesystem::copy_file(
                 config_path + "/layouts/" + default_layout + ".ini", "imgui.ini"
             ))
-            KLDebug::log("Failed to load editor layout", DebugType_Error);
+            KLDebug::log("Failed to load editor layout", KEDebugType_Error);
     }
 
     io.FontDefault =

@@ -7,6 +7,8 @@
 template<>
 struct yaml::Convert<ImVec4>
 {
+    constexpr bool supported() const { return true; }
+
     std::string value_to_str(const ImVec4& vec)
     {
         return std::string(
@@ -61,6 +63,8 @@ struct yaml::Convert<ImVec4>
 template<>
 struct yaml::Convert<ImVec2>
 {
+    constexpr bool supported() const { return true; }
+
     std::string value_to_str(const ImVec2& vec)
     {
         return std::string("[" + std::to_string(vec.x) + ", " + std::to_string(vec.y) + "]");

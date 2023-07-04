@@ -3,8 +3,9 @@
 #include "utils/utils.hpp"
 
 #include <kryos/core/application.hpp>
-#include <kryos/utils/utils.hpp>
 #include <kryos/renderer/window.hpp>
+#include <kryos/serialization/serialization.hpp>
+#include <kryos/utils/utils.hpp>
 
 #include <filesystem>
 #include <imgui/imgui.h>
@@ -180,13 +181,13 @@ bool KLProject::create(
             KLDebug::log(
                 "Failed to create project: cannot write project yaml file to '" +
                     m_project_filename = "'",
-                DebugType_Error
+                KEDebugType_Error
             );
     }
     else
         KLDebug::log(
             "Failed to create project: cannot create directory '" + m_root_path + "'",
-            DebugType_Error
+            KEDebugType_Error
         );
 
     m_name.clear();
@@ -216,6 +217,37 @@ bool KLProject::load(const std::string& project_filename)
     return false;
 }
 
-void KLProject::serialize(const std::string& filename, bool use_scene_name) {}
+bool KLProject::serialize_scene(KScene* scene, const std::string& filename)
+{
+    KLSerializationHandler* handler = KIApplication::get_layer<KLSerializationHandler>();
 
-void KLProject::deserialize(KScene* scene, const std::string& filename) {}
+    bool result = handler->serialize(filename, scene);
+    if (result)
+        m_unsaved = false;
+    else
+    {
+        KLDebug::log(
+            "Failed to serialize current scene '" + scene->get_name() + "'", KEDebugType_Error
+        );
+    }
+
+    return result;
+}
+
+bool KLProject::deserialize_scene(KScene* scene, const std::string& filename)
+{
+    KLSerializationHandler* handler = KIApplication::get_layer<KLSerializationHandler>();
+    KLSceneManager* scene_manager = KIApplication::get_layer<KLSceneManager>();
+
+    bool result = handler->deserialize(filename, scene_manager->get_active_scene());
+    if (result)
+        m_unsaved = false;
+    else
+    {
+        KLDebug::log(
+            "Failed to deserialize scene at target path: '" + filename + "'", KEDebugType_Error
+        );
+    }
+
+    return result;
+}

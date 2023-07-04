@@ -25,8 +25,8 @@ class KLProject : public KIApplicationLayer
 
     bool create(const std::string& name, const std::string& project_root_path, bool is_3d_based);
     bool load(const std::string& project_filename);
-    void serialize(const std::string& filename, bool use_scene_name);
-    void deserialize(KScene* scene, const std::string& filename);
+    bool serialize_scene(KScene* scene, const std::string& filename);
+    bool deserialize_scene(KScene* scene, const std::string& filename);
 
   private:
     static KLProject* m_Instance;

@@ -3,8 +3,8 @@
 #include "gui/preferences.hpp"
 
 #include <kryos/core/application.hpp>
-#include <kryos/utils/utils.hpp>
 #include <kryos/scene/scene_manager.hpp>
+#include <kryos/utils/utils.hpp>
 
 #include <imgui/imgui.h>
 #include <portable-file-dialogs/portable-file-dialogs.h>
@@ -109,11 +109,13 @@ void KDocking::on_imgui_update()
             }
 
             if (ImGui::MenuItem("Save", "Ctrl+S", nullptr, scene_loaded))
-                KLDebug::log("Not Implemented yet", DebugType_Warning);
+                KLDebug::log("Not Implemented yet", KEDebugType_Warning);
 
             if (ImGui::MenuItem("Save As", "Ctrl+Shift+S", nullptr, scene_loaded))
             {
-                if (KIApplication::get_layer<KLSceneManager>()->get_active_scene() != nullptr)
+                KScene* active_scene =
+                    KIApplication::get_layer<KLSceneManager>()->get_active_scene();
+                if (active_scene != nullptr)
                 {
                     KLProject* project = KIApplication::get_layer<KLProject>();
                     std::string filename = pfd::save_file(
@@ -122,7 +124,9 @@ void KDocking::on_imgui_update()
                     )
                                                .result();
                     if (filename.size() > 0)
-                        project->serialize(filename, false);
+                    {
+                        project->serialize_scene(active_scene, filename);
+                    }
                 }
             }
 
@@ -147,7 +151,7 @@ void KDocking::on_imgui_update()
             if (ImGui::MenuItem("Preferences"))
             {
                 if (m_workspace->get_panel("Preferences") == nullptr)
-                    KLDebug::log("Preference settings are coming soon ...", DebugType_Warning);
+                    KLDebug::log("Preference settings are coming soon ...", KEDebugType_Warning);
             }
 
             ImGui::EndMenu();

@@ -3,10 +3,10 @@
 #include "gui/assets.hpp"
 #include "gui/console.hpp"
 #include "gui/docking.hpp"
-#include "gui/viewport.hpp"
 #include "gui/editor.hpp"
 #include "gui/hierarchy.hpp"
 #include "gui/properties.hpp"
+#include "gui/viewport.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <kryos/renderer/renderer.hpp>

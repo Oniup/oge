@@ -1,5 +1,5 @@
 /imgui.ini
-docs/html
+/debug.log
 
 ############################
 ### General build output ###
@@ -39,7 +39,6 @@ st[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]
 # clangd
 .clangd/
 .cache/
-debug.log
 
 # CLion
 cmake-build-debug

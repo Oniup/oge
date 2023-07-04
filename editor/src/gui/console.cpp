@@ -51,8 +51,8 @@ void KConsole::on_imgui_update()
             if (ImGui::MenuItem("Log Tests"))
             {
                 KLDebug::log("Test Message");
-                KLDebug::log("Test Warning Message", DebugType_Warning);
-                KLDebug::log("Test Error Message", DebugType_Error);
+                KLDebug::log("Test Warning Message", KEDebugType_Warning);
+                KLDebug::log("Test Error Message", KEDebugType_Error);
             }
             ImGui::EndMenu();
         }
@@ -70,7 +70,7 @@ void KConsole::on_imgui_update()
             std::string prefix{};
             switch (std::get<KEDebugType>(log))
             {
-            case DebugType_Warning:
+            case KEDebugType_Warning:
                 prefix = "[Warning (" + std::to_string(std::get<float>(log)) + ")]: ";
                 ImGui::PushStyleColor(
                     ImGuiCol_Text, ImVec4(
@@ -80,7 +80,7 @@ void KConsole::on_imgui_update()
                 );
                 break;
                 prefix = "[Warning (" + std::to_string(std::get<float>(log)) + ")]: ";
-            case DebugType_Error:
+            case KEDebugType_Error:
                 prefix = "[Error (" + std::to_string(std::get<float>(log)) + ")]: ";
                 ImGui::PushStyleColor(
                     ImGuiCol_Text, ImVec4(
@@ -89,13 +89,13 @@ void KConsole::on_imgui_update()
                                    )
                 );
                 break;
-            case DebugType_Message:
+            case KEDebugType_Message:
                 prefix = "[Message (" + std::to_string(std::get<float>(log)) + ")]: ";
                 break;
             }
 
             ImGui::TextWrapped("%s", std::string(prefix + std::get<std::string>(log)).c_str());
-            if (std::get<KEDebugType>(log) != DebugType_Message)
+            if (std::get<KEDebugType>(log) != KEDebugType_Message)
                 ImGui::PopStyleColor();
         }
     }
