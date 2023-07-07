@@ -90,16 +90,14 @@ void KHierarchy::_draw_entity(KEntity entity, ecs::Entity& entity_clicked, bool&
 }
 
 void KHierarchy::_create_shape(
-    const std::string& new_entity_name, const std::string& mesh_file_path, KEntity* parent
+    const std::string& new_entity_name, const std::string& mesh_name, KEntity* parent
 )
 {
     KEntity entity{};
     KCName* name = entity.add_component<KCName>(new_entity_name);
 
     KCMeshRenderer* mesh_renderer = entity.add_component<KCMeshRenderer>();
-    mesh_renderer->model = KIApplication::get_layer<KLAssetHandler>()->load_model_into_memory(
-        mesh_file_path, ModelFileType_Obj
-    );
+    mesh_renderer->model = KIApplication::get_layer<KLAssetHandler>()->get_static_model(mesh_name);
 
     if (parent != nullptr)
     {
@@ -121,11 +119,11 @@ void KHierarchy::_popup_menu(KEntity* entity)
             if (ImGui::BeginMenu("Shape"))
             {
                 if (ImGui::MenuItem("Cube"))
-                    _create_shape("Cube", "kryos-lib/assets/models/cube", entity);
+                    _create_shape("Cube", "cube", entity);
                 if (ImGui::MenuItem("Sphere"))
-                    _create_shape("Sphere", "kryos-lib/assets/models/sphere", entity);
+                    _create_shape("Sphere", "sphere", entity);
                 if (ImGui::MenuItem("Plane"))
-                    _create_shape("Plane", "kryos-lib/assets/models/plane", entity);
+                    _create_shape("Plane", "plane", entity);
                 ImGui::EndMenu();
             }
             ImGui::EndMenu();

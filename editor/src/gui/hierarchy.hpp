@@ -20,7 +20,7 @@ class KHierarchy final : public KIWorkspace
   private:
     void _draw_entity(KEntity entity, ecs::Entity& entity_clicked, bool& opened_popup);
     void _create_shape(
-        const std::string& new_entity_name, const std::string& mesh_file_path, KEntity* parent
+        const std::string& new_entity_name, const std::string& mesh_name, KEntity* parent
     );
     void _popup_menu(KEntity* entity = nullptr);
 

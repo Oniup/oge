@@ -3,6 +3,7 @@
 
 #include <imgui/imgui.h>
 #include <yaml/yaml.hpp>
+#include <kryos/utils/yaml_types.hpp>
 
 template<>
 struct yaml::Convert<ImVec4>

@@ -219,9 +219,7 @@ bool KLProject::load(const std::string& project_filename)
 
 bool KLProject::serialize_scene(KScene* scene, const std::string& filename)
 {
-    KLSerializationHandler* handler = KIApplication::get_layer<KLSerializationHandler>();
-
-    bool result = handler->serialize(filename, scene);
+    bool result = KSerialization::serialize(filename, scene);
     if (result)
         m_unsaved = false;
     else
@@ -236,10 +234,9 @@ bool KLProject::serialize_scene(KScene* scene, const std::string& filename)
 
 bool KLProject::deserialize_scene(KScene* scene, const std::string& filename)
 {
-    KLSerializationHandler* handler = KIApplication::get_layer<KLSerializationHandler>();
     KLSceneManager* scene_manager = KIApplication::get_layer<KLSceneManager>();
 
-    bool result = handler->deserialize(filename, scene_manager->get_active_scene());
+    bool result = KSerialization::deserialize(filename, scene_manager->get_active_scene());
     if (result)
         m_unsaved = false;
     else
